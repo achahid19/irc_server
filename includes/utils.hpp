@@ -3,42 +3,40 @@
 #include <iostream>
 #include <sstream>
 
-enum {
+// define colors
+#define COLOR_RESET "\033[0m"
+#define COLOR_RED "\033[31m"
+#define COLOR_GREEN "\033[32m"
+#define COLOR_YELLOW "\033[33m"
+#define COLOR_BLUE "\033[34m"
+#define COLOR_MAGENTA "\033[35m"
+#define COLOR_CYAN "\033[36m"
+#define COLOR_GRAY "\033[90m"
+
+
+enum logLevels {
 	INFO_LOGS = true,
 	ERROR_LOGS = true,
-	DEBUG_LOGS = false,
+	DEBUG_LOGS = true,
 	WARNING_LOGS = false,
 };
 
 std::string to_string( int value );
+void	printMsg(
+	std::string const& msg,
+	int logLevel = true,
+	const char *color = "\033[0m"
+);
 
 // time class with static methods
 class Time {
 public:
 	static std::string getCurrentTime() {
-		time_t now = time(0);
-		struct tm tstruct;
 		char buf[80];
-		tstruct = *localtime(&now);
-		strftime(buf, sizeof(buf), "[ %Y-%m-%d %X ]", &tstruct);
-		return std::string(buf);
-	}
-	static std::string getCurrentDate() {
-		time_t now = time(0);
-		struct tm tstruct;
-		char buf[80];
-		tstruct = *localtime(&now);
-		strftime(buf, sizeof(buf), "[ %Y-%m-%d ]", &tstruct);
-		return std::string(buf);
-	}
-	static std::string getCurrentTimeWithMs() {
-		time_t now = time(0);
-		struct tm tstruct;
-		char buf[80];
-		tstruct = *localtime(&now);
-		strftime(buf, sizeof(buf), "[ %Y-%m-%d %X ]", &tstruct);
-		std::stringstream ss;
-		ss << buf << "." << (now % 1000); // append milliseconds
-		return ss.str();
+		time_t now = time(NULL);
+		strftime(buf, sizeof(buf), "[ %X ]", localtime(&now));
+		return buf;
 	}
 };
+
+std::string	ft_trim_spaces( const std::string &str );

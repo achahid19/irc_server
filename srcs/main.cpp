@@ -1,4 +1,4 @@
-#include "irc_server.hpp"
+#include "Irc_server.hpp"
 
 int main(int argc, char** argv) {
 	if (argc != 3) {

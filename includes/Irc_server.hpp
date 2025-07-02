@@ -13,25 +13,33 @@
 
 #include <map>
 #include <vector>
+#include <set>
+
+#include "User.hpp"
 
 class IrcServer {
 private:
 	// server socket
 	int					_listeningSocket;
-	std::map<int, int>  _connections; // map of client sockets to their fds
-	int					_port;
-	std::string 		_server_password;
+	std::map< int, User* >  _connections; // map client socket to its user data.
+	int					_port; // maybe dont need to store it.
+	std::string 		_serverPassword;
 	
 	// epoll stuff
-	int			_epollFd;
-	std::map<int, struct epoll_event> _eventsMap; // map to store events with their fd
-	std::vector<struct epoll_event> _events; // events list
-	int			_maxEvents;
+	int									_epollFd;
+	std::map<int, struct epoll_event> 	_eventsMap; // map to store events with their client socket
+	std::vector<struct epoll_event> 	_events; // events list
+	int									_maxEvents;
+
+	std::set<int>						_opennedFds; // find the openFd to remove it.
 
 	// helper private methods
-	void	CreateBindListeningSocket( void );
-	void	listenSocket( void );
-	void	epollCreate( void );
+	void			_CreateBindListeningSocket( void );
+	void			_listenSocket( void );
+	void			_epollCreate( void );
+	void			_connectUser( void );
+	void			_eventsLoop( int eventsCount );
+	void			_readRequest( int eventIndex, int *bytes_read );
 
 	// prevent copy or instantiation without params
 	IrcServer( IrcServer const &other );
@@ -52,6 +60,14 @@ public:
 		public:
 			server_error( const std::string &msg );
 			~server_error( void ) throw();
+			virtual	const char*	what( void ) const throw();
+	};
+	class	user_connection_error : public std::exception {
+		private:
+			const std::string	msg;
+		public:
+			user_connection_error( const std::string &msg );
+			~user_connection_error( void ) throw();
 			virtual	const char*	what( void ) const throw();
 	};
 };
