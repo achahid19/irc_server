@@ -9,6 +9,7 @@
  * Think about implementing parser for syntax commands (PASS, NICK, USER).
  * parse correctly params for NICK, USER, PASS commands.
  * handdle CAP, send no cap to client.
+ * Handle NICK, USER change commands.
  */
 
 /**

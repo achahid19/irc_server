@@ -26,64 +26,25 @@ private:
 	user_registration_state				_state;
 	int									_sock;
 	int									_regitrationStep;
-
-	// std::string				_nickName;
-	// std::string				_userName;
-	std::string				_serverPassword;
-
-	// helper methods
+	std::string							_serverPassword;
 
 	// setter
-	void	_setNickname( std::string const& nickName ) {
-		this->_userData["Nickname"] = nickName;
-	};
-	void	_setUsername( std::string const& userName ) {
-		this->_userData["Username"] = userName;
-	};
-	bool	_checkPassword( std::string const& password ) {
-		return password == this->_serverPassword;
-	};
+	void	_setNickname( std::string const& nickName );
+	void	_setUsername( std::string const& userName );
+	bool	_checkPassword( std::string const& password );
 	
 public:
-	User( const std::string &serverPass, int sock ) : _state(UNREGISTRED) {
-		this->_userSupportedCommands.insert("NICK");
-		this->_userSupportedCommands.insert("USER");
-		this->_userSupportedCommands.insert("PASS");
-
-		this->_userData.insert(std::make_pair("NICK", ""));
-		this->_userData.insert(std::make_pair("USER", ""));
-
-		this->_serverPassword = serverPass;
-		this->_sock = sock;
-		this->_regitrationStep = 0;
-	};
+	User( const std::string &serverPass, int sock );
 
 	// methods
 	void		append( const char *buffer );
 	void		registerUser( void );
-	bool		isUserRegistred( void ) const {
-		return this->_state == REGISTRED;
-	}
-	bool		isSupportedCommand( std::string const& cmd ) const {
-		if (this->_userSupportedCommands.find(cmd) != this->_userSupportedCommands.end()) {
-			return true;
-		}
-		return false;
-	}
+	bool		isUserRegistred( void ) const;
+	bool		isSupportedCommand( std::string const& cmd ) const;
 
 	// getters
-	user_registration_state	getUserState( void ) const {
-		return this->_state;
-	}
+	//user_registration_state	getUserState( void ) const;
 
-	std::string const	getNickname( void ) const {
-		if (this->_userData.find("Nickname") != this->_userData.end())
-			return this->_userData.at("Nickname");
-		return "";
-	};
-	std::string const	getUsername( void ) const {
-		if (this->_userData.find("Username") != this->_userData.end())
-			return this->_userData.at("Username");
-		return "";
-	};
+	std::string const	getNickname( void ) const;
+	std::string const	getUsername( void ) const;
 };

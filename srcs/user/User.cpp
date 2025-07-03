@@ -1,6 +1,22 @@
 #include "User.hpp"
 #include "utils.hpp"
 
+// constructor 
+User::User( const std::string &serverPass, int sock ) {
+		this->_userSupportedCommands.insert("NICK");
+		this->_userSupportedCommands.insert("USER");
+		this->_userSupportedCommands.insert("PASS");
+
+		this->_userData.insert(std::make_pair("NICK", ""));
+		this->_userData.insert(std::make_pair("USER", ""));
+
+		this->_serverPassword = serverPass;
+		this->_sock = sock;
+		this->_regitrationStep = 0;
+		this->_state = UNREGISTRED;
+};
+
+// methods
 void User::append( const char *buffer ) {
 	if (!buffer) return;
 	this->_ircMessage.append(buffer);
@@ -48,7 +64,7 @@ void	User::registerUser( void ) {
 					":jarvis_server 464 " + this->getNickname() + " :Password incorrect\r\n"
 				);
 				send(this->_sock, response.c_str(), response.size(), 0);
-				// need to be disconnected
+				// need to be disconnected (close socket)
 			}
 		}
 	};
@@ -62,3 +78,41 @@ void	User::registerUser( void ) {
 		this->_ircMessage.clear();
 	}
 }
+
+bool	User::isUserRegistred( void ) const {
+	return this->_state == REGISTRED;
+}
+
+bool	User::isSupportedCommand( std::string const& cmd ) const {
+	return (
+		this->_userSupportedCommands.find(cmd) != this->_userSupportedCommands.end()
+	);
+}
+
+// getters
+// user_registration_state	User::getUserState( void ) const {
+// 	return this->_state;
+// }
+
+std::string const	User::getNickname( void ) const {
+	if (this->_userData.find("Nickname") != this->_userData.end())
+		return this->_userData.at("Nickname");
+	return "";
+};
+
+std::string const	User::getUsername( void ) const {
+	if (this->_userData.find("Username") != this->_userData.end())
+		return this->_userData.at("Username");
+	return "";
+};
+
+// setters
+void	User::_setNickname( std::string const& nickName ) {
+	this->_userData["Nickname"] = nickName;
+};
+void	User::_setUsername( std::string const& userName ) {
+	this->_userData["Username"] = userName;
+};
+bool	User::_checkPassword( std::string const& password ) {
+	return password == this->_serverPassword;
+};
