@@ -16,7 +16,7 @@ private:
 
 public:
 	// Constructor by parameter
-	Irc_message( const std::string &message );
+	Irc_message( const std::string message );
 
 	// methods
 	void	parseMessage( void ); // general method to parse the message
@@ -24,6 +24,14 @@ public:
 	bool	parseNickCommand( void );
 	bool	parseUserCommand( void );
 	bool	hasPrefix( void ) const;
+	void	clear( void ) { 
+		_message.clear(); 
+		_prefix.clear(); 
+		_command.clear(); 
+		_params.clear(); 
+		_trailing.clear(); 
+		_hasPrefix = false; 
+	};
 
 	// getters
 	std::string const& getMessage( void ) const { return _message; };

@@ -39,7 +39,7 @@ private:
 	void			_epollCreate( void );
 	void			_connectUser( void );
 	void			_eventsLoop( int eventsCount );
-	void			_readRequest( int eventIndex, int *bytes_read );
+	void			_handleRequest( int eventIndex, int *bytes_read );
 
 	// prevent copy or instantiation without params
 	IrcServer( IrcServer const &other );

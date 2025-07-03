@@ -1,5 +1,6 @@
 #include "Irc_server.hpp"
 #include "utils.hpp"
+#include "Irc_message.hpp"
 #include "User.hpp"
 
 /**
@@ -117,10 +118,8 @@ void	IrcServer::serverRun( void ) {
 
 		int eventsCount = epoll_wait(this->_epollFd, this->_events.data(), this->_maxEvents, -1);
 		if (eventsCount < 0) {
-			::printMsg(
-				"Error in epoll_wait: " + std::string(strerror(errno)),
-				ERROR_LOGS,
-				COLOR_RED
+			::printErr(
+				"Error in epoll_wait: " + std::string(strerror(errno))
 			);
 			continue; // handle error, but continue running the server
 		}
@@ -166,30 +165,34 @@ void	IrcServer::_eventsLoop( int eventsCount ) {
 				this->_connectUser();
 			}
 			catch(const user_connection_error& e) {
-				::printMsg(e.what(), ERROR_LOGS, COLOR_RED);
+				::printErr(e.what());
 			}
 		}
 		else if(this->_events[i].events & (EPOLLIN | EPOLLET)) {
-			int	bytes_read;
+			int	bytes_read = 0;
 			int	clientSocket = this->_events[i].data.fd;
 			struct epoll_event event_obj = this->_eventsMap[clientSocket];
 
 			::printMsg("Reading User Socket", INFO_LOGS, COLOR_GRAY);
-			this->_readRequest(i, &bytes_read);
+			this->_handleRequest(i, &bytes_read);
 			if (bytes_read == 0) {
 				// close user stuff
 				close(clientSocket);
 				this->_opennedFds.erase(clientSocket);
-				delete this->_connections[clientSocket];
-				this->_connections.erase(clientSocket);
 				this->_eventsMap.erase(clientSocket);
 				epoll_ctl(this->_epollFd, EPOLL_CTL_DEL, clientSocket, &event_obj);
+				// get user
+				User *user = this->_connections[clientSocket];
+				user->removeUserNickname();
+				user->removeUserUsername();
+				delete this->_connections[clientSocket];
+				this->_connections.erase(clientSocket);
 			}
 		}
 	}
 }
 
-void	IrcServer::_readRequest( int eventIndex, int *bytes_read ) {
+void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
 	char			buffer[1024];
 	int				bytes;
 	int				i = eventIndex;
@@ -199,10 +202,8 @@ void	IrcServer::_readRequest( int eventIndex, int *bytes_read ) {
 	memset(buffer, 0, sizeof(buffer));
 	bytes = recv(clientSocket, buffer, sizeof(buffer), 0);
 	if (bytes < 0) {
-		::printMsg(
-			"Error reading client socket " + ::to_string(clientSocket),
-			ERROR_LOGS,
-			COLOR_RED
+		::printErr(
+			"Error reading client socket " + ::to_string(clientSocket)
 		);
 	}
 	*bytes_read += bytes;
@@ -218,6 +219,13 @@ void	IrcServer::_readRequest( int eventIndex, int *bytes_read ) {
 		 */
 		::printMsg("NON SUPPORTED COMMAND YET !", INFO_LOGS, COLOR_BLUE);
 		::printMsg("Received Data:" + std::string(buffer), INFO_LOGS, COLOR_BLUE);
+
+		// get line
+		Irc_message ircMessage(buffer);
+		ircMessage.parseMessage();
+		if (ircMessage.getCommand() == "QUIT") {
+			*bytes_read = 0; // set bytes read to 0 to close the connection
+		}
 	}
 }
 

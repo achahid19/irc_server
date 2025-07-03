@@ -28,6 +28,8 @@ void	printMsg(
 	const char *color = "\033[0m"
 );
 
+void	printErr( std::string const& err );
+
 // time class with static methods
 class Time {
 public:

@@ -21,6 +21,17 @@ void	printMsg(
 }
 
 /**
+ * 
+ */
+void	printErr(
+	std::string const& err
+) {
+	ERROR_LOGS && \
+	std::cerr << COLOR_RED << Time::getCurrentTime() << " " \
+	<< err << COLOR_RESET <<std::endl;
+}
+
+/**
  * ft_trim_spaces - trim leading and trailing spaces from a string.
  * @param str: the string to trim.
  * 

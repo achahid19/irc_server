@@ -6,13 +6,6 @@
 #include <set>
 #include <sys/socket.h>
 
-// enum reading_status {
-// 	READING_ERROR,
-// 	COMPLETED,
-// 	NOT_SUPPORTED_CMD,
-// 	UNCOMPLETED,
-// };
-
 enum user_registration_state {
 	UNREGISTRED, // just connected
 	REGISTRED,
@@ -28,9 +21,13 @@ private:
 	int									_regitrationStep;
 	std::string							_serverPassword;
 
+	// unique nickname and username over all users
+	static std::set<std::string>		_registredNicknames;
+	static std::set<std::string>		_registredUsernames;
+
 	// setter
-	void	_setNickname( std::string const& nickName );
-	void	_setUsername( std::string const& userName );
+	bool	_setNickname( std::string const& nickName );
+	bool	_setUsername( std::string const& userName );
 	bool	_checkPassword( std::string const& password );
 	
 public:
@@ -41,10 +38,24 @@ public:
 	void		registerUser( void );
 	bool		isUserRegistred( void ) const;
 	bool		isSupportedCommand( std::string const& cmd ) const;
+	void		removeUserNickname( void ) {
+		std::cout << "Removing user nickname: " << std::endl;
+		if (this->_userData.find("Nickname") != this->_userData.end()) {
+			_registredNicknames.erase(this->_userData["Nickname"]);
+			//this->_userData.erase("Nickname");
+		}
+	};
+	void	removeUserUsername( void ) {
+		std::cout << "Removing user username: " << std::endl;
+		if (this->_userData.find("Username") != this->_userData.end()) {
+			_registredUsernames.erase(this->_userData["Username"]);
+			//this->_userData.erase("Username");
+		}
+	};
 
 	// getters
-	//user_registration_state	getUserState( void ) const;
-
 	std::string const	getNickname( void ) const;
 	std::string const	getUsername( void ) const;
+
+
 };

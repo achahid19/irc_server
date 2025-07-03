@@ -2,7 +2,7 @@
 #include "utils.hpp"
 
 // Constructor by parameter
-Irc_message::Irc_message( const std::string &message ) {
+Irc_message::Irc_message( const std::string message ) {
 	_message = ::ft_trim_spaces(message);
 	this->_prefix = "";
 	this->_command = "";
