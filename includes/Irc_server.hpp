@@ -21,12 +21,12 @@
 class IrcServer {
 private:
 	// server socket
-	int					_listeningSocket;
-	std::map< int, User* >  _connections; // map client socket to its user data.
-	int					_port;
-	std::string 		_serverPassword;
-	int					_connectionsCount;
-	static bool			_running;
+	int									_listeningSocket;
+	std::map< int, User* >  			_connections; // map client socket to its user data.
+	int									_port;
+	std::string 						_serverPassword;
+	int									_connectionsCount;
+	static bool							_running;
 	
 	// epoll stuff
 	int									_epollFd;
@@ -63,6 +63,7 @@ public:
 	class	server_error : public std::exception {
 		private:
 			const std::string	msg;
+
 		public:
 			server_error( const std::string &msg );
 			~server_error( void ) throw();
@@ -71,6 +72,7 @@ public:
 	class	user_connection_error : public std::exception {
 		private:
 			const std::string	msg;
+
 		public:
 			user_connection_error( const std::string &msg );
 			~user_connection_error( void ) throw();
