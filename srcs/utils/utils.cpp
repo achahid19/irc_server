@@ -1,5 +1,12 @@
 #include "utils.hpp"
 
+/**
+ * to_string - convert an integer to a string.
+ * 
+ * @param value: the integer value to convert.
+ * 
+ * Return: the string representation of the integer.
+ */
 std::string to_string( int value ) {
 	std::stringstream ss;
 
@@ -8,7 +15,13 @@ std::string to_string( int value ) {
 }
 
 /**
+ * printMsg - print a message to the console with a timestamp.
  * 
+ * @param msg: the message to print.
+ * @param logLevel: the log level (0 for no logs, 1 for info, 2 for debug).
+ * @param color: the color code for the message.
+ * 
+ * Return: void.
  */
 void	printMsg(
 	std::string const& msg,
@@ -21,7 +34,11 @@ void	printMsg(
 }
 
 /**
+ * printErr - print an error message to the console with a timestamp.
  * 
+ * @param err: the error message to print.
+ * 
+ * Return: void.
  */
 void	printErr(
 	std::string const& err

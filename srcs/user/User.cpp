@@ -2,43 +2,67 @@
 #include "utils.hpp"
 #include "Irc_message.hpp"
 
-/**
- * to do list -
- * disconnect user if user or nickname is already registred.
- * 
- * check if already regitred for other command.
- */
-
 // static member initialization
 std::set<std::string> User::_registredNicknames = std::set<std::string>();
 std::set<std::string> User::_registredUsernames = std::set<std::string>();
 
-// constructor 
+// constructor
+
+/**
+ * User - User constructor
+ * 
+ * This method will set and initialize User data
+ * 
+ * @param serverPass: the password used by client's to access this server
+ * @param sock: the socket of the user connection
+ * 
+ * Return: void.
+ */
 User::User( const std::string &serverPass, int sock ) {
-		this->_userSupportedCommands.insert("NICK");
-		this->_userSupportedCommands.insert("USER");
-		this->_userSupportedCommands.insert("PASS");
-		this->_userSupportedCommands.insert("CAP");
+	this->_userSupportedCommands.insert("NICK");
+	this->_userSupportedCommands.insert("USER");
+	this->_userSupportedCommands.insert("PASS");
+	this->_userSupportedCommands.insert("CAP");
 
-		this->_userData.insert(std::make_pair("NICK", ""));
-		this->_userData.insert(std::make_pair("USER", ""));
+	this->_userData.insert(std::make_pair("NICK", ""));
+	this->_userData.insert(std::make_pair("USER", ""));
 
-		this->_serverPassword = serverPass;
-		this->_sock = sock;
-		this->_regitrationStep = 0;
-		this->_state = UNREGISTRED;
+	this->_serverPassword = serverPass;
+	this->_sock = sock;
+	this->_regitrationStep = 0;
+	this->_state = UNREGISTRED;
 };
 
 // methods
+
+/**
+ * append - User append method
+ * 
+ * This method will append a buffer to the user's irc message.
+ * 
+ * @param buffer: the buffer to be appended
+ * 
+ * Return: void.
+ */
 void User::append( const char *buffer ) {
 	if (!buffer) return;
 	this->_ircMessage.append(buffer);
 };
 
+/**
+ * registerUser - User registerUser method
+ * 
+ * This method will parse the user's irc message,
+ * and register the user if all conditions are met.
+ * It will handle NICK, USER, PASS commands,
+ * and send appropriate responses to the user.
+ * 
+ * Return: void.
+ */
 void	User::registerUser( void ) {
 	if (this->_ircMessage.empty()) return;
 	printMsg(
-		"Registering user " + this->getNickname() + " with message: " + this->_ircMessage,
+		"Registering user with:\n" + this->_ircMessage,
 		DEBUG_LOGS,
 		COLOR_CYAN
 	);
@@ -122,22 +146,54 @@ void	User::registerUser( void ) {
 	}
 }
 
+/**
+ * isUserRegistred - User isUserRegistred method
+ * 
+ * This method will check if the user is registered.
+ * 
+ * Return: true if the user is registered, false otherwise.
+ */
 bool	User::isUserRegistred( void ) const {
 	return this->_state == REGISTRED;
 }
 
+/**
+ * isSupportedCommand - User isSupportedCommand method
+ * 
+ * This method will check if the command is supported by the server.
+ * 
+ * @param cmd: the command to be checked
+ * 
+ * Return: true if the command is supported, false otherwise.
+ */
 bool	User::isSupportedCommand( std::string const& cmd ) const {
 	return (
 		this->_userSupportedCommands.find(cmd) != this->_userSupportedCommands.end()
 	);
 }
 
+/**
+ * removeUserNickname - User removeUserNickname method
+ * 
+ * This method will remove the user's nickname from the registered nicknames set.
+ * It is called when the user is disconnected or when the nickname is changed.
+ * 
+ * Return: void.
+ */
 void	User::removeUserNickname( void ) {
 	if (this->_userData.find("Nickname") != this->_userData.end()) {
 		_registredNicknames.erase(this->_userData["Nickname"]);
 	}
 };
 
+/**
+ * removeUserUsername - User removeUserUsername method
+ * 
+ * This method will remove the user's username from the registered usernames set.
+ * It is called when the user is disconnected or when the username is changed.
+ * 
+ * Return: void.
+ */
 void	User::removeUserUsername( void ) {
 	if (this->_userData.find("Username") != this->_userData.end()) {
 		_registredUsernames.erase(this->_userData["Username"]);
@@ -145,23 +201,57 @@ void	User::removeUserUsername( void ) {
 };
 
 // getters
+
+/**
+ * getNickname - User getNickname method
+ * 
+ * This method will return the user's nickname.
+ * 
+ * Return: the user's nickname as a string.
+ */
 std::string const	User::getNickname( void ) const {
 	if (this->_userData.find("Nickname") != this->_userData.end())
 		return this->_userData.at("Nickname");
 	return "";
 };
 
+/**
+ * getUsername - User getUsername method
+ * 
+ * This method will return the user's username.
+ * 
+ * Return: the user's username as a string.
+ */
 std::string const	User::getUsername( void ) const {
 	if (this->_userData.find("Username") != this->_userData.end())
 		return this->_userData.at("Username");
 	return "";
 };
 
+/**
+ * getState - User getState method
+ * 
+ * This method will return the user's registration state.
+ * 
+ * Return: the user's registration state as an enum user_registration_state.
+ */
 user_registration_state	User::getState( void ) const {
 		return this->_state;
 };
 
 // private setters
+
+/**
+ * _setNickname - User _setNickname method
+ * 
+ * This method will set the user's nickname.
+ * It checks if the nickname is valid and not already in use.
+ * If the nickname is valid, it adds it to the registered nicknames set.
+ * 
+ * @param nickName: the nickname to be set
+ * 
+ * Return: true if the nickname is set successfully, false otherwise.
+ */
 bool	User::_setNickname( std::string const& nickName ) {
 	if (_registredNicknames.find(nickName) != _registredNicknames.end()) {
 		std::string response(
@@ -187,6 +277,17 @@ bool	User::_setNickname( std::string const& nickName ) {
 	return true;
 };
 
+/**
+ * _setUsername - User _setUsername method
+ * 
+ * This method will set the user's username.
+ * It checks if the username is valid and not already in use.
+ * If the username is valid, it adds it to the registered usernames set.
+ * 
+ * @param userName: the username to be set
+ * 
+ * Return: true if the username is set successfully, false otherwise.
+ */
 bool	User::_setUsername( std::string const& userName ) {
 	if (_registredUsernames.find(userName) != _registredUsernames.end()) {
 		std::string response(
@@ -212,6 +313,15 @@ bool	User::_setUsername( std::string const& userName ) {
 	return true;
 };
 
+/**
+ * _checkPassword - User _checkPassword method
+ * 
+ * This method will check if the provided password matches the server's password.
+ * 
+ * @param password: the password to be checked
+ * 
+ * Return: true if the password is correct, false otherwise.
+ */
 bool	User::_checkPassword( std::string const& password ) {
 	return password == this->_serverPassword;
 };

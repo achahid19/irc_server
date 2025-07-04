@@ -5,14 +5,9 @@
 
 /**
  * TODO list -
- * add status for connected users count.
- * disconnect clients when bytes read is 0.
- * Think about implementing parser for syntax commands (PASS, NICK, USER).
- * parse correctly params for NICK, USER, PASS commands.
- * handdle CAP, send no cap to client.
  * 
- * make a destructor to close all sockets and free memory.
- * add doc strings for all methods.
+ * make a destructor to close all sockets and free memory. DONE
+ * add doc strings for all methods. IN PROGRESS
  * Handle NICK, USER change commands.
  * Handle PRIVMSG command.
  */
@@ -48,6 +43,14 @@ IrcServer::IrcServer( int port, std::string const password )
 	this->_connectionsCount = 0;
 }
 
+/**
+ * ~IrcServer - IrcServer destructor
+ * 
+ * This method will close all opened file descriptors,
+ * delete all User objects, and clear the connections map.
+ * 
+ * Return: void.
+ */
 IrcServer::~IrcServer( void ) {
 	// closing opened Fds.
 	for (
@@ -119,6 +122,14 @@ void	IrcServer::_listenSocket( void ) {
 	}
 }	
 
+/**
+ * _epollCreate - IrcServer epollCreate instance method
+ * 
+ * This method will create an epoll instance,
+ * add the listening socket to it, and set up the events.
+ * 
+ * Return: void.
+ */
 void	IrcServer::_epollCreate( void ) {
 	this->_epollFd = epoll_create1(0);
 	if (this->_epollFd < 0) {
@@ -137,6 +148,17 @@ void	IrcServer::_epollCreate( void ) {
 	this->_events.push_back(event);
 }
 
+/**
+ * serverRun - IrcServer serverRun method
+ * 
+ * This method will run the server, waiting for events
+ * and handling them accordingly. It uses epoll to efficiently
+ * wait for events on the listening socket and connected clients.
+ * It will handle new connections, read data from clients,
+ * and process user commands.
+ * 
+ * Return: void.
+ */
 void	IrcServer::serverRun( void ) {
 	signal(SIGINT, this->signalHandler);
 	while (_running) {
@@ -160,6 +182,16 @@ void	IrcServer::serverRun( void ) {
 	};
 }
 
+/**
+ * _connectUser - IrcServer connectUser method
+ * 
+ * This method will accept a new user connection,
+ * create a new User object for the connection,
+ * and add the user to the epoll instance for further events handling.
+ * It also updates the connections map and the events map.
+ * 
+ * Return: void.
+ */
 void	IrcServer::_connectUser( void ) {
 	int clientSocket = accept(this->_listeningSocket, NULL, NULL);
 	if (clientSocket < 0) {
@@ -184,6 +216,17 @@ void	IrcServer::_connectUser( void ) {
 	this->_eventsMap.insert(std::make_pair(clientSocket, clientEvent));
 }
 
+/**
+ * _eventsLoop - IrcServer eventsLoop method
+ * 
+ * This method will loop through the events received from epoll,
+ * handling new connections and reading data from connected clients.
+ * It will also handle user disconnections and cleanup.
+ * 
+ * @param eventsCount: the number of events to handle
+ * 
+ * Return: void.
+ */
 void	IrcServer::_eventsLoop( int eventsCount ) {
 	for (int i = 0; i < eventsCount; ++i) {
 		if (this->_events[i].data.fd == this->_listeningSocket) {
@@ -230,6 +273,18 @@ void	IrcServer::_eventsLoop( int eventsCount ) {
 	}
 }
 
+/**
+ * _handleRequest - IrcServer handleRequest method
+ * 
+ * This method will read data from the client socket,
+ * process the user's commands, and handle user registration.
+ * It will also handle disconnections if the user sends a QUIT command.
+ * 
+ * @param eventIndex: the index of the event in the events list
+ * @param bytes_read: pointer to an integer to store the number of bytes read
+ * 
+ * Return: void.
+ */
 void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
 	char			buffer[1024];
 	int				bytes;
@@ -259,7 +314,7 @@ void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
 		 * process some other commands.
 		 */
 		::printMsg("NON SUPPORTED COMMAND YET !", INFO_LOGS, COLOR_BLUE);
-		::printMsg("Received Data:" + std::string(buffer), INFO_LOGS, COLOR_BLUE);
+		::printMsg("Received Command: " + std::string(buffer), INFO_LOGS, COLOR_BLUE);
 
 		Irc_message ircMessage(buffer);
 	
@@ -271,6 +326,7 @@ void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
 }
 
 // exception server errors handling classes.
+
 /**
  * server_error - IrcServer server_error constructor
  * 
