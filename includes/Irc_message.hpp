@@ -19,25 +19,18 @@ public:
 	Irc_message( const std::string message );
 
 	// methods
-	void	parseMessage( void ); // general method to parse the message
+	void	parseMessage( void );
 	bool	parsePassCommand( void );
 	bool	parseNickCommand( void );
 	bool	parseUserCommand( void );
 	bool	hasPrefix( void ) const;
-	void	clear( void ) { 
-		_message.clear(); 
-		_prefix.clear(); 
-		_command.clear(); 
-		_params.clear(); 
-		_trailing.clear(); 
-		_hasPrefix = false; 
-	};
+	void	clear( void );
 
 	// getters
-	std::string const& getMessage( void ) const { return _message; };
-	std::string const& getCommand( void ) const { return _command; };
-	std::vector<std::string> const& getParams( void ) const { return _params; };
-	std::string const& getTrailing( void ) const { return _trailing; };
+	std::string const& getMessage( void ) const;
+	std::string const& getCommand( void ) const;
+	std::vector<std::string> const& getParams( void ) const;
+	std::string const& getTrailing( void ) const;
 
 	// get full message
 	std::string getFullMessage( void ) const;

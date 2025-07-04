@@ -5,8 +5,10 @@
 /**
  * to do list -
  * disconnect user if user or nickname is already registred.
+ * 
  * check if already regitred for other command.
  */
+
 // static member initialization
 std::set<std::string> User::_registredNicknames = std::set<std::string>();
 std::set<std::string> User::_registredUsernames = std::set<std::string>();
@@ -58,13 +60,12 @@ void	User::registerUser( void ) {
 			continue; // skip unsupported commands
 		}
 		if (command == "CAP") {
-			// nothing wont be supported for cap
 			std::string response(
-				":jarvis_server 421 " + this->getNickname() + " CAP :No CAPs supported\r\n"
+				":jarvis_server 421 " + this->getNickname() + " CAP :No CAPs\r\n"
 			);
 			send(this->_sock, response.c_str(), response.size(), 0);
 		}
-		if (command == "NICK" && this->getNickname().empty()) {
+		else if (command == "NICK" && this->getNickname().empty()) {
 			if (ircMessage.parseNickCommand() == false) {
 				std::string response(
 					":jarvis_server 432 " + this->getNickname() + " " + ircMessage.getParams()[0] + " NICK :parameters error\r\n"
@@ -131,6 +132,19 @@ bool	User::isSupportedCommand( std::string const& cmd ) const {
 	);
 }
 
+void	User::removeUserNickname( void ) {
+	if (this->_userData.find("Nickname") != this->_userData.end()) {
+		_registredNicknames.erase(this->_userData["Nickname"]);
+	}
+};
+
+void	User::removeUserUsername( void ) {
+	if (this->_userData.find("Username") != this->_userData.end()) {
+		_registredUsernames.erase(this->_userData["Username"]);
+	}
+};
+
+// getters
 std::string const	User::getNickname( void ) const {
 	if (this->_userData.find("Nickname") != this->_userData.end())
 		return this->_userData.at("Nickname");
@@ -143,7 +157,11 @@ std::string const	User::getUsername( void ) const {
 	return "";
 };
 
-// setters
+user_registration_state	User::getState( void ) const {
+		return this->_state;
+};
+
+// private setters
 bool	User::_setNickname( std::string const& nickName ) {
 	if (_registredNicknames.find(nickName) != _registredNicknames.end()) {
 		std::string response(

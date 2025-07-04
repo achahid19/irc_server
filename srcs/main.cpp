@@ -7,9 +7,9 @@ int main(int argc, char** argv) {
 	}
 
 	try {
-		IrcServer	jarvis_streaming_server(atoi(argv[1]), std::string(argv[2]));
+		IrcServer	jarvis_chat_server(atoi(argv[1]), std::string(argv[2]));
 
-		jarvis_streaming_server.serverRun();
+		jarvis_chat_server.serverRun();
 	}
 	catch( const IrcServer::server_error &e ) {
 		std::cerr << "Server error: " << e.what() << std::endl;

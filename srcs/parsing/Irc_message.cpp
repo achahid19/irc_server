@@ -82,6 +82,22 @@ bool Irc_message::hasPrefix( void ) const {
 	return _hasPrefix;
 }
 
+void	Irc_message::clear( void ) { 
+	_message.clear(); 
+	_prefix.clear(); 
+	_command.clear(); 
+	_params.clear(); 
+	_trailing.clear(); 
+	_hasPrefix = false; 
+};
+
+// getters
+std::string const& Irc_message::getMessage( void ) const { return _message; };
+std::string const& Irc_message::getCommand( void ) const { return _command; };
+std::vector<std::string> const& Irc_message::getParams( void ) const { return _params; };
+std::string const& Irc_message::getTrailing( void ) const { return _trailing; };
+
+
 // get full message for debugging
 std::string Irc_message::getFullMessage( void ) const {
 	std::string fullMessage = _message;

@@ -27,38 +27,30 @@ private:
 	static std::set<std::string>		_registredNicknames;
 	static std::set<std::string>		_registredUsernames;
 
-	// setter
+	// private setters
 	bool	_setNickname( std::string const& nickName );
 	bool	_setUsername( std::string const& userName );
 	bool	_checkPassword( std::string const& password );
+
+	// no copy or instantiation without params
+	User( User const &other );
+	User &operator=( User const &other );
+	User( void );
 	
 public:
+	// constructor
 	User( const std::string &serverPass, int sock );
 
 	// methods
-	void		append( const char *buffer );
-	void		registerUser( void );
-	bool		isUserRegistred( void ) const;
-	bool		isSupportedCommand( std::string const& cmd ) const;
-	void		removeUserNickname( void ) {
-		if (this->_userData.find("Nickname") != this->_userData.end()) {
-			_registredNicknames.erase(this->_userData["Nickname"]);
-			//this->_userData.erase("Nickname");
-		}
-	};
-	void	removeUserUsername( void ) {
-		if (this->_userData.find("Username") != this->_userData.end()) {
-			_registredUsernames.erase(this->_userData["Username"]);
-			//this->_userData.erase("Username");
-		}
-	};
+	void	append( const char *buffer );
+	void	registerUser( void );
+	bool	isUserRegistred( void ) const;
+	bool	isSupportedCommand( std::string const& cmd ) const;
+	void	removeUserNickname( void );
+	void	removeUserUsername( void );
 
 	// getters
-	std::string const	getNickname( void ) const;
-	std::string const	getUsername( void ) const;
-	user_registration_state	getState( void ) const {
-		return this->_state;
-	};
-
-
+	std::string const		getNickname( void ) const;
+	std::string const		getUsername( void ) const;
+	user_registration_state	getState( void ) const;
 };
