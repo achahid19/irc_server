@@ -10,6 +10,7 @@
 #include <exception>
 #include <cstring> // strerror
 #include <cerrno> // errno for error handling
+#include <signal.h> // signal handling
 
 #include <map>
 #include <vector>
@@ -25,6 +26,7 @@ private:
 	int					_port;
 	std::string 		_serverPassword;
 	int					_connectionsCount;
+	static bool			_running;
 	
 	// epoll stuff
 	int									_epollFd;
@@ -41,6 +43,9 @@ private:
 	void			_connectUser( void );
 	void			_eventsLoop( int eventsCount );
 	void			_handleRequest( int eventIndex, int *bytes_read );
+
+	// signal handler
+	static void		signalHandler( int signal );
 
 	// prevent copy or instantiation without params
 	IrcServer( IrcServer const &other );

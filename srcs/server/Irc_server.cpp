@@ -10,9 +10,15 @@
  * Think about implementing parser for syntax commands (PASS, NICK, USER).
  * parse correctly params for NICK, USER, PASS commands.
  * handdle CAP, send no cap to client.
+ * 
+ * make a destructor to close all sockets and free memory.
+ * add doc strings for all methods.
  * Handle NICK, USER change commands.
+ * Handle PRIVMSG command.
  */
 
+bool IrcServer::_running = true; // flag to control server running state, for ctrl+c handling
+ 
 /**
  * IrcServer - IrcServer constructor
  * 
@@ -43,12 +49,29 @@ IrcServer::IrcServer( int port, std::string const password )
 }
 
 IrcServer::~IrcServer( void ) {
-	this->_listeningSocket >= 0 && close(this->_listeningSocket);
-	this->_epollFd >= 0 && close(this->_epollFd);
+	// closing opened Fds.
+	for (
+		std::set<int>::iterator it = this->_opennedFds.begin();
+		it != this->_opennedFds.end();
+		++it
+	) {
+		close(*it);
+	}
+	this->_opennedFds.clear();
+	// free user data.
+	for (std::map<int, User*>::iterator it = this->_connections.begin();
+		it != this->_connections.end();
+		++it
+	) {
+		delete it->second;
+	}
+	this->_connections.clear();
 
-	INFO_LOGS && \
-	std::cout << Time::getCurrentTime() << " - ";
-	std::cout << "IrcServer destroyed." << std::endl;
+	printMsg(
+		"Jarvis Server Destroyed 🤖",
+		INFO_LOGS,
+		COLOR_GREEN
+	);
 }
 
 /**
@@ -101,6 +124,7 @@ void	IrcServer::_epollCreate( void ) {
 	if (this->_epollFd < 0) {
 		throw IrcServer::server_error("Failed to create epoll instance");
 	}
+	this->_opennedFds.insert(this->_epollFd);
 
 	struct epoll_event event;
 	event.events = EPOLLIN; // listen for incoming connections.
@@ -114,7 +138,8 @@ void	IrcServer::_epollCreate( void ) {
 }
 
 void	IrcServer::serverRun( void ) {
-	while (true) {
+	signal(SIGINT, this->signalHandler);
+	while (_running) {
 		::printMsg("Waiting for events...", INFO_LOGS, COLOR_GRAY);
 
 		int eventsCount = epoll_wait(this->_epollFd, this->_events.data(), this->_maxEvents, -1);
@@ -310,4 +335,16 @@ IrcServer::user_connection_error::~user_connection_error( void ) throw() {};
  */
 const char* IrcServer::user_connection_error::what( void ) const throw() {
 	return this->msg.c_str();
+}
+
+/**
+ * signalHandler - signal handler for SIGINT
+ * 
+ * @param signal: the signal number (e.g., SIGINT)
+ * 
+ * Return: void.
+ */
+void	IrcServer::signalHandler( int signal ) {
+	(void)signal;
+	_running = false;
 }
