@@ -132,7 +132,7 @@ void	User::registerUser( void ) {
 					":jarvis_server 464 " + this->getNickname() + " :Password incorrect\r\n"
 				);
 				send(this->_sock, response.c_str(), response.size(), 0);
-				// need to be disconnected (close socket)
+				this->_state = DISCONNECT;
 			}
 		}
 	};
