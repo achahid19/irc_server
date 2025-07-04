@@ -22,8 +22,9 @@ private:
 	// server socket
 	int					_listeningSocket;
 	std::map< int, User* >  _connections; // map client socket to its user data.
-	int					_port; // maybe dont need to store it.
+	int					_port;
 	std::string 		_serverPassword;
+	int					_connectionsCount;
 	
 	// epoll stuff
 	int									_epollFd;

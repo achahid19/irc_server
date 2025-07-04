@@ -4,7 +4,8 @@
 
 /**
  * to do list -
- * deconnect user if user or nickname is already registred.
+ * disconnect user if user or nickname is already registred.
+ * check if already regitred for other command.
  */
 // static member initialization
 std::set<std::string> User::_registredNicknames = std::set<std::string>();
@@ -22,7 +23,6 @@ User::User( const std::string &serverPass, int sock ) {
 
 		this->_serverPassword = serverPass;
 		this->_sock = sock;
-		std::cout << "User created with socket: " << this->_sock << std::endl;
 		this->_regitrationStep = 0;
 		this->_state = UNREGISTRED;
 };
@@ -115,7 +115,7 @@ void	User::registerUser( void ) {
 		printMsg("User " + this->getNickname() + " registered successfully.", DEBUG_LOGS, COLOR_CYAN);
 		this->_state = REGISTRED;
 		std::string response(
-			":jarvis_server 001 " + this->getNickname() + " :Welcome to the IRC Jarvis Server\r\n"
+			":jarvis_server 001 " + this->getNickname() + " :Welcome to IRC Jarvis Server 🤖\r\n"
 		);
 		send(this->_sock, response.c_str(), response.size(), 0);
 	}
@@ -150,6 +150,7 @@ bool	User::_setNickname( std::string const& nickName ) {
 			":jarvis_server 432 * " + nickName + " NICK :is already in use\r\n"
 		);
 		send(this->_sock, response.c_str(), response.size(), 0);
+		this->_state = DISCONNECT;
 		return false;
 	}
 	else if (nickName.empty() || nickName.length() > 9
@@ -174,6 +175,7 @@ bool	User::_setUsername( std::string const& userName ) {
 			":jarvis_server 432 * " + userName + " USER :is already in use\r\n"
 		);
 		send(this->_sock, response.c_str(), response.size(), 0);
+		this->_state = DISCONNECT;
 		return false;
 	}
 	else if (userName.empty() || userName.length() > 9

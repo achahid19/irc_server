@@ -5,10 +5,12 @@
 #include <map>
 #include <set>
 #include <sys/socket.h>
+#include <unistd.h>
 
 enum user_registration_state {
 	UNREGISTRED, // just connected
 	REGISTRED,
+	DISCONNECT
 };
 
 class User {
@@ -39,14 +41,12 @@ public:
 	bool		isUserRegistred( void ) const;
 	bool		isSupportedCommand( std::string const& cmd ) const;
 	void		removeUserNickname( void ) {
-		std::cout << "Removing user nickname: " << std::endl;
 		if (this->_userData.find("Nickname") != this->_userData.end()) {
 			_registredNicknames.erase(this->_userData["Nickname"]);
 			//this->_userData.erase("Nickname");
 		}
 	};
 	void	removeUserUsername( void ) {
-		std::cout << "Removing user username: " << std::endl;
 		if (this->_userData.find("Username") != this->_userData.end()) {
 			_registredUsernames.erase(this->_userData["Username"]);
 			//this->_userData.erase("Username");
@@ -56,6 +56,9 @@ public:
 	// getters
 	std::string const	getNickname( void ) const;
 	std::string const	getUsername( void ) const;
+	user_registration_state	getState( void ) const {
+		return this->_state;
+	};
 
 
 };

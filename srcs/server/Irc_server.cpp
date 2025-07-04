@@ -39,6 +39,7 @@ IrcServer::IrcServer( int port, std::string const password )
 		COLOR_GRAY
 	);
 	this->_epollCreate();
+	this->_connectionsCount = 0;
 }
 
 IrcServer::~IrcServer( void ) {
@@ -163,6 +164,12 @@ void	IrcServer::_eventsLoop( int eventsCount ) {
 		if (this->_events[i].data.fd == this->_listeningSocket) {
 			try {
 				this->_connectUser();
+				printMsg(
+					"New user connected, Number of connections now: " \
+					+ ::to_string(++this->_connectionsCount) + " 👁️",
+					INFO_LOGS,
+					COLOR_GREEN
+				);
 			}
 			catch(const user_connection_error& e) {
 				::printErr(e.what());
@@ -176,17 +183,23 @@ void	IrcServer::_eventsLoop( int eventsCount ) {
 			::printMsg("Reading User Socket", INFO_LOGS, COLOR_GRAY);
 			this->_handleRequest(i, &bytes_read);
 			if (bytes_read == 0) {
-				// close user stuff
+				// disconnect the user
+				User *user = this->_connections[clientSocket];
+				std::string name = user->getNickname() != "" ? user->getNickname() : ::to_string(clientSocket);
+				printMsg(
+					"Closing Connection: See you again " + name + " 👋",
+					INFO_LOGS,
+					COLOR_GREEN
+				);
 				close(clientSocket);
 				this->_opennedFds.erase(clientSocket);
 				this->_eventsMap.erase(clientSocket);
 				epoll_ctl(this->_epollFd, EPOLL_CTL_DEL, clientSocket, &event_obj);
-				// get user
-				User *user = this->_connections[clientSocket];
 				user->removeUserNickname();
 				user->removeUserUsername();
 				delete this->_connections[clientSocket];
 				this->_connections.erase(clientSocket);
+				this->_connectionsCount--;
 			}
 		}
 	}
@@ -211,6 +224,9 @@ void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
 	user->append(buffer);
 	if (!user->isUserRegistred()) {
 		user->registerUser();
+		if (user->getState() == DISCONNECT) {
+			*bytes_read = 0; // set bytes read to 0 to close the connection
+		}
 	}
 	else {
 		/**
@@ -220,11 +236,11 @@ void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
 		::printMsg("NON SUPPORTED COMMAND YET !", INFO_LOGS, COLOR_BLUE);
 		::printMsg("Received Data:" + std::string(buffer), INFO_LOGS, COLOR_BLUE);
 
-		// get line
 		Irc_message ircMessage(buffer);
+	
 		ircMessage.parseMessage();
 		if (ircMessage.getCommand() == "QUIT") {
-			*bytes_read = 0; // set bytes read to 0 to close the connection
+			*bytes_read = 0; // Close connection
 		}
 	}
 }
