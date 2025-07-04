@@ -263,7 +263,7 @@ bool	User::_setNickname( std::string const& nickName ) {
 	}
 	else if (nickName.empty() || nickName.length() > 9
 			|| nickName.find_first_not_of(
-			"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_"
+			"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-"
 		) != std::string::npos
 	) {
 		std::string response(
@@ -299,7 +299,7 @@ bool	User::_setUsername( std::string const& userName ) {
 	}
 	else if (userName.empty() || userName.length() > 9
 			|| userName.find_first_not_of(
-			"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_"
+			"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-"
 		) != std::string::npos
 	) {
 		std::string response(
