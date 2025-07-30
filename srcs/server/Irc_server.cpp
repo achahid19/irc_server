@@ -2,6 +2,7 @@
 #include "utils.hpp"
 #include "Irc_message.hpp"
 #include "User.hpp"
+#include "Channel.hpp"
 
 /**
  * TODO list -

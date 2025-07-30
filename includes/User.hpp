@@ -53,4 +53,9 @@ public:
 	std::string const		getNickname( void ) const;
 	std::string const		getUsername( void ) const;
 	user_registration_state	getState( void ) const;
+
+	//CHA
+	int						getSock( void ){
+		return _sock;
+	}
 };
