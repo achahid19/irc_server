@@ -6,6 +6,7 @@
 #include <set>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <algorithm>
 
 enum user_registration_state {
 	UNREGISTRED, // just connected
@@ -23,6 +24,9 @@ private:
 	int									_regitrationStep;
 	std::string							_serverPassword;
 
+	//* ban flage tacks a ref to channel and she
+
+
 	// unique nickname and username over all users
 	static std::set<std::string>		_registredNicknames;
 	static std::set<std::string>		_registredUsernames;
@@ -36,7 +40,7 @@ private:
 	User( User const &other );
 	User &operator=( User const &other );
 	User( void );
-	
+
 public:
 	// constructor
 	User( const std::string &serverPass, int sock );
@@ -49,13 +53,20 @@ public:
 	void	removeUserNickname( void );
 	void	removeUserUsername( void );
 
+	// Debug method to print all attributes
+	void printDebugInfo() const;
+
 	// getters
 	std::string const		getNickname( void ) const;
 	std::string const		getUsername( void ) const;
 	user_registration_state	getState( void ) const;
 
 	//CHA
-	int						getSock( void ){
-		return _sock;
+	void sendMessage( std::string message ){
+		//what evermsge it take it will just structure it
+		send(_sock, message.c_str(), message.length(), 0);
+	}
+	std::string getPrefix() const {
+		return ":" + this->getNickname() + "!" + this->getUsername() + "@localhost";
 	}
 };
