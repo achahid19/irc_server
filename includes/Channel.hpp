@@ -22,7 +22,7 @@ private:
 	bool									_isfull;
 	bool									_isTopicSet;
 	int										_channelUserCounter;
-	std::string								_channelUsersNames;
+	std::string								_channelUsersNames;	// for showing the new joiners the list of users on channels
 
 public:
 
@@ -130,12 +130,63 @@ public:
 			//!Banned (bonus feature)	474	ERR_BANNEDFROMCHAN
 			return ;
 		}
-		if (isOperator( user.getNickname() ) == false){
+		if (isOperator( user.getNickname() ) == false && this->_isTopicOpera == true){
 			return ;
 		}
 		_channelTopic = newTopic;
+		//topic succefully changed boread cast
+		std::string msg(user.getPrefix() + " TOPIC " + this->_channelName + " :" + newTopic + "!\r\n");
+		broadcastMsg( user, msg );
 	}
 
+
+
+	void	viewTopic( User &user ){
+		if (isUserInChannel(user.getNickname()) == false){
+			//442 ERR_NOTONCHANNEL <channel> :You're not on that channel
+			return ;
+		}
+		if (isUserBanned(user.getNickname()) == true){
+			//!Banned (bonus feature)	474	ERR_BANNEDFROMCHAN
+			return ;
+		}
+		if (_isTopicSet == true){
+			//:irc.server 332 <nick> #42 :The topic text
+			std::string msg(":irc.server 332" + user.getNickname() + this->_channelName + " :" + this->_channelTopic + "\r\n");
+			user.sendMessage(msg);
+		}
+		else {
+			std::string msg(":irc.server 332" + user.getNickname() + this->_channelName + " :No topic is set\r\n");
+			user.sendMessage(msg);
+		}
+	}
+	
+	
+	
+	
+	void	kickUser( User &user, std::string badUser ){
+		if (isUserInChannel(user.getNickname()) == false || isUserInChannel(badUser) == false ){
+			//442 ERR_NOTONCHANNEL <channel> :You're not on that channel
+			return ;
+		}
+		if (isUserBanned(user.getNickname()) == true){
+			//!Banned (bonus feature)	474	ERR_BANNEDFROMCHAN
+			return ;
+		}
+		if (isOperator( user.getNickname() ) == false){
+			return ;
+		}
+		_channelUsers.erase(badUser);
+		_channelOperators.erase(badUser);
+		_channelUserCounter--;
+		if (_isfull){
+			_isfull = false;
+		}
+	}
+	
+	
+	
+	
 	//getters
 	std::string	getChannelName( void ){
 		return this->_channelName;
