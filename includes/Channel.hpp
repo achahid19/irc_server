@@ -162,6 +162,152 @@ public:
 	}
 	
 	
+	// modes functions 
+	void setInviteOnly(User &user) {
+    if (!isOperator(user.getNickname())) {
+        // Send error: Only channel operators can set invite-only mode
+        return;
+    }
+    _isInviteOnly = true;
+    std::string msg = user.getPrefix() + " MODE " + _channelName + " +i\r\n";
+    broadcastMsg(user, msg);
+}
+
+void removeInviteOnly(User &user) {
+    if (!isOperator(user.getNickname())) {
+        return;
+    }
+    _isInviteOnly = false;
+    std::string msg = user.getPrefix() + " MODE " + _channelName + " -i\r\n";
+    broadcastMsg(user, msg);
+}
+
+void setTopicOps(User &user) {
+    if (!isOperator(user.getNickname())) {
+        return;
+    }
+    _isTopicOpera = true;
+    std::string msg = user.getPrefix() + " MODE " + _channelName + " +t\r\n";
+    broadcastMsg(user, msg);
+}
+
+void removeTopicOps(User &user) {
+    if (!isOperator(user.getNickname())) {
+        return;
+    }
+    _isTopicOpera = false;
+    std::string msg = user.getPrefix() + " MODE " + _channelName + " -t\r\n";
+    broadcastMsg(user, msg);
+}
+
+	// In Channel.cpp or inline in Channel.hpp:
+
+void setKey(User &user, std::string key) {
+    if (!isOperator(user.getNickname())) {
+        // Send error: Only channel operators can set channel key
+        return;
+    }
+    _channelKey = key;
+    _isKeyReq = true;
+    // Broadcast mode change
+    std::string msg = user.getPrefix() + " MODE " + _channelName + " +k " + key + "\r\n";
+    broadcastMsg(user, msg);
+}
+
+void removeKey(User &user, std::string key) {
+    if (!isOperator(user.getNickname())) {
+        return;
+    }
+    if (_channelKey == key) {
+        _channelKey.clear();
+        _isKeyReq = false;
+        std::string msg = user.getPrefix() + " MODE " + _channelName + " -k " + key + "\r\n";
+        broadcastMsg(user, msg);
+    }
+}
+
+void setLimit(User &user, std::string limit) {
+    if (!isOperator(user.getNickname())) {
+        return;
+    }
+    _channelMaxUsers = atoi(limit.c_str());
+    _isLimitSet = true;
+    std::string msg = user.getPrefix() + " MODE " + _channelName + " +l " + limit + "\r\n";
+    broadcastMsg(user, msg);
+}
+
+void removeLimit(User &user, std::string limit) {
+    if (!isOperator(user.getNickname())) {
+        return;
+    }
+    _isLimitSet = false;
+    _channelMaxUsers = 0;
+    std::string msg = user.getPrefix() + " MODE " + _channelName + " -l\r\n";
+    broadcastMsg(user, msg);
+}
+
+void setOps(User &user, std::string targetUser) {
+    if (!isOperator(user.getNickname())) {
+        return;
+    }
+    if (isUserInChannel(targetUser)) {
+        _channelOperators.insert(targetUser);
+        std::string msg = user.getPrefix() + " MODE " + _channelName + " +o " + targetUser + "\r\n";
+        broadcastMsg(user, msg);
+    }
+}
+
+void removeOps(User &user, std::string targetUser) {
+    if (!isOperator(user.getNickname())) {
+        return;
+    }
+    _channelOperators.erase(targetUser);
+    std::string msg = user.getPrefix() + " MODE " + _channelName + " -o " + targetUser + "\r\n";
+    broadcastMsg(user, msg);
+}
+
+void setInviteOnly(User &user) {
+    if (!isOperator(user.getNickname())) {
+        return;
+    }
+    _isInviteOnly = true;
+    std::string msg = user.getPrefix() + " MODE " + _channelName + " +i\r\n";
+    broadcastMsg(user, msg);
+}
+
+void removeInviteOnly(User &user) {
+    if (!isOperator(user.getNickname())) {
+        return;
+    }
+    _isInviteOnly = false;
+    std::string msg = user.getPrefix() + " MODE " + _channelName + " -i\r\n";
+    broadcastMsg(user, msg);
+}
+
+void setTopicOps(User &user) {
+    if (!isOperator(user.getNickname())) {
+        return;
+    }
+    _isTopicOpera = true;
+    std::string msg = user.getPrefix() + " MODE " + _channelName + " +t\r\n";
+    broadcastMsg(user, msg);
+}
+
+void removeTopicOps(User &user) {
+    if (!isOperator(user.getNickname())) {
+        return;
+    }
+    _isTopicOpera = false;
+    std::string msg = user.getPrefix() + " MODE " + _channelName + " -t\r\n";
+    broadcastMsg(user, msg);
+}
+
+
+
+
+
+
+
 	
 	
 	void	kickUser( User &user, std::string badUser ){
