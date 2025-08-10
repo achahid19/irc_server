@@ -301,6 +301,7 @@ void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
 		);
 	}
 	*bytes_read += bytes;
+	::printMsg("bytes: " + bytes, INFO_LOGS, COLOR_BLUE);
 
 	user->append(buffer);
 	if (!user->isUserRegistred()) {
@@ -314,14 +315,41 @@ void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
 		 * user is already registred,
 		 * process some other commands.
 		 */
-		::printMsg("NON SUPPORTED COMMAND YET !", INFO_LOGS, COLOR_BLUE);
-		::printMsg("Received Command: " + std::string(buffer), INFO_LOGS, COLOR_BLUE);
-
 		Irc_message ircMessage(buffer);
-	
 		ircMessage.parseMessage();
-		if (ircMessage.getCommand() == "QUIT") {
-			*bytes_read = 0; // Close connection
+		
+		std::string command = ircMessage.getCommand();
+		::printMsg("Processing command::: " + command, INFO_LOGS, COLOR_BLUE);
+
+		if (command == "QUIT") {
+			*bytes_read = 0; // Close connection - cleanup will be handled in _eventsLoop
+		}
+		else if (command == "JOIN") {
+			if (ircMessage.getParams().size() > 0) {
+				std::string channelName = ircMessage.getParams()[0];
+				std::string key = (ircMessage.getParams().size() > 1) ? ircMessage.getParams()[1] : "";
+				joinCmd(*user, channelName, key);
+			} else {
+				user->sendMessage(":jarvis_server 461 " + user->getNickname() + " JOIN :Not enough parameterss\r\n");
+			}
+		}
+		else if (command == "PING") {
+			if (ircMessage.getParams().size() > 0) {
+				std::string response = ":jarvis_server PONG jarvis_server :" + ircMessage.getParams()[0] + "\r\n";
+				user->sendMessage(response);
+			}
+		}
+		// else if (command == "msg"){
+		// 	if (ircMessage.getParams().size() > 0){
+		// 		std::string recieverNick = ircMessage.getParams()[1];
+		// 		//remove
+		// 		std::cout << ircMessage.getParams()[0] << std::endl;
+		// 		std::cout << ircMessage.getParams()[1] << std::endl;
+
+		// 	}
+		// }
+		else {
+			::printMsg("Command not implemented yet: " + command, INFO_LOGS, COLOR_YELLOW);
 		}
 	}
 }

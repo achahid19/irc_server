@@ -54,7 +54,7 @@ private:
 	IrcServer( void );
 
 	//CHA
-	std::unordered_map<std::string, Channel*> _channels;
+	std::map<std::string, Channel*> _channels;
 
 public:
 	IrcServer( int port, std::string const password );
@@ -85,61 +85,78 @@ public:
 
 	//CHA
 	void	joinCmd( User &user, std::string channelName, std::string key ){
-		if (isChannelExist(channelName) == false){
-			_channels[channelName] = new Channel(channelName, user, key);
-			return ;
+		// Check if channel name is valid
+		if (channelName.empty() || channelName[0] != '#') {
+			user.sendMessage(":jarvis_server 403 " + user.getNickname() + " " + channelName + " :Invalid channel name\r\n");
+			return;
 		}
-		int errCode = _channels[channelName]->addUser(user, key);
-		if ( errCode ){
-			// give back the error code
-			return ;
-		}
-		//is it got add sucssfull ✅
-		user.sendMessage(user.getPrefix() + " JOIN #" + _channels[user.getNickname()]->getChannelName() + "\r\n");
-		//!			Notify everyone
-		//Send a JOIN message to the channel: :nick!user@host JOIN #channel
-		//* [:nick!user@host JOIN #channel]
-		std::string message(
-			user.getPrefix() + " JOIN #" + _channels[user.getNickname()]->getChannelName() + "\r\n");
-		_channels[user.getNickname()]->broadcastMsg(user, message);
 
-		//! 		 Send topic
-		// If channel has a topic, send
-		//* [332 RPL_TOPIC <nick> #channel :topic text]
-		//* [331 RPL_NOTOPIC <nick> #channel :No topic is set]
-		if(_channels[user.getNickname()]->ifTopic()){
-			message.clear();
-			message = "332 "  + user.getNickname() + " #" + _channels[user.getNickname()]->getChannelName() + " :topic" +  _channels[user.getNickname()]->getChannelTopic() + "\r\n";
-			user.sendMessage(message);
+		// Remove # from channel name for internal storage
+		std::string cleanChannelName = channelName.substr(1);
+
+		// Create new channel if it doesn't exist
+		if (!isChannelExist(cleanChannelName)) {
+			_channels[cleanChannelName] = new Channel(cleanChannelName, user, key);
+			
+			// Send JOIN message to user
+			user.sendMessage(user.getPrefix() + " JOIN " + channelName + "\r\n");
+			
+			// Send topic information
+			if (_channels[cleanChannelName]->ifTopic()) {
+				user.sendMessage(":jarvis_server 332 " + user.getNickname() + " " + channelName + " :" + _channels[cleanChannelName]->getChannelTopic() + "\r\n");
+			} else {
+				user.sendMessage(":jarvis_server 331 " + user.getNickname() + " " + channelName + " :No topic is set\r\n");
+			}
+			
+			// Send names list
+			user.sendMessage(":jarvis_server 353 " + user.getNickname() + " = " + channelName + " :" + _channels[cleanChannelName]->usersNames() + "\r\n");
+			user.sendMessage(":jarvis_server 366 " + user.getNickname() + " " + channelName + " :End of /NAMES list\r\n");
+			
+			return;
+		}
+
+		// Try to add user to existing channel
+		int errCode = _channels[cleanChannelName]->addUser(user, key);
+		
+		// Handle different error codes
+		if (errCode == 473) {
+			user.sendMessage(":jarvis_server 473 " + user.getNickname() + " " + channelName + " :Cannot join channel (+i)\r\n");
+			return;
+		}
+		else if (errCode == 474) {
+			user.sendMessage(":jarvis_server 474 " + user.getNickname() + " " + channelName + " :Cannot join channel (banned)\r\n");
+			return;
+		}
+		else if (errCode == 475) {
+			user.sendMessage(":jarvis_server 475 " + user.getNickname() + " " + channelName + " :Cannot join channel (+k)\r\n");
+			return;
+		}
+		else if (errCode == 471) {
+			user.sendMessage(":jarvis_server 471 " + user.getNickname() + " " + channelName + " :Cannot join channel (+l)\r\n");
+			return;
+		}
+		else if (errCode != 0) {
+			user.sendMessage(":jarvis_server 403 " + user.getNickname() + " " + channelName + " :Cannot join channel\r\n");
+			return;
+		}
+
+		// Successfully joined - send JOIN message to user
+		user.sendMessage(user.getPrefix() + " JOIN " + channelName + "\r\n");
+		
+		// Broadcast JOIN message to channel
+		std::string joinMsg = user.getPrefix() + " JOIN " + channelName + "\r\n";
+		_channels[cleanChannelName]->broadcastMsg(user, joinMsg);
+		
+		// Send topic information
+		if (_channels[cleanChannelName]->ifTopic()) {
+			user.sendMessage(":jarvis_server 332 " + user.getNickname() + " " + channelName + " :" + _channels[cleanChannelName]->getChannelTopic() + "\r\n");
 		} else {
-			message.clear();
-			message = "331 "  + user.getNickname() + " #" + _channels[user.getNickname()]->getChannelName() + " :No topic is set\r\n";
-			user.sendMessage(message);
+			user.sendMessage(":jarvis_server 331 " + user.getNickname() + " " + channelName + " :No topic is set\r\n");
 		}
-
-		//		!Send the names of users in the channel
-		//* [353 RPL_NAMREPLY <nick> = #channel :user1 user2 @opuser]
-		//* [366 RPL_ENDOFNAMES <nick> #channel :End of /NAMES list]
-		// Prefix with @ if a user is an operator
-		message.clear();
-		message = "353 " + user.getNickname() + " #" + _channels[user.getNickname()]->getChannelName() + " :" + _channels[channelName]->usersNames() + "\r\n";
-		user.sendMessage(message);
-		message.clear();
-		message = "356 " + user.getNickname() + " #" + _channels[user.getNickname()]->getChannelName() + " :End of /NAMES list\r\n";
-		user.sendMessage(message);
-		//:bob!user@host JOIN #chat\r\n
-
-
-		// If channel has a topic, send:332 RPL_TOPIC <nick> #channel :topic text
-		// if not 331 RPL_NOTOPIC <nick> #channel :No topic is set
-
-
-		// Send the names of users in the channel
-		// send userlist
-		// 353 RPL_NAMREPLY <nick> = #channel :user1 user2 @opuser
-		// 366 RPL_ENDOFNAMES <nick> #channel :End of /NAMES list
-
-
+		
+		// Send names list
+		user.sendMessage(":jarvis_server 353 " + user.getNickname() + " = " + channelName + " :" + _channels[cleanChannelName]->usersNames() + "\r\n");
+		user.sendMessage(":jarvis_server 366 " + user.getNickname() + " " + channelName + " :End of /NAMES list\r\n");
 	}
 
 	void	partCmd( User &user, std::string channelName, std::string reason ){
@@ -227,21 +244,26 @@ public:
 		else {}
 	}
 
-	void	kickCmd( User &user, std::string channelName, std::string toKickUser){
-				//check if channel exists
-		if (isChannelExist(channelName) == false){
-			// 403 ERR_NOSUCHCHANNEL <channel> :No such channel
-			return ;
-		}
+	// void	kickCmd( User &user, std::string channelName, std::string toKickUser){
+	// 			//check if channel exists
+	// 		(void)user;
+	// 	if (isChannelExist(channelName) == false){
+	// 		// 403 ERR_NOSUCHCHANNEL <channel> :No such channel
+	// 		return ;
+	// 	}
 		
-	}
+	// }
 
 	bool	isChannelExist( std::string channelName ){
 		return _channels.find(channelName) != _channels.end();
 	}
 
-	void	HandleErrors( int errorCode, User& user, Channel &channel){
-		// if (errorCode == 473) user.sendMessage();
-	}
+	// void	HandleErrors( int errorCode, User& user, Channel &channel){
+	// 	// if (errorCode == 473) user.sendMessage();
+	// }
+
+	// void	sendPrivateMsg( User &reciever, std::string msg ){
+	// 	//check if reciever exic
+	// }
 
 };

@@ -69,4 +69,5 @@ public:
 	std::string getPrefix() const {
 		return ":" + this->getNickname() + "!" + this->getUsername() + "@localhost";
 	}
+	
 };
