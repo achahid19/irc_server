@@ -73,4 +73,9 @@ public:
 	std::string getChannelMode(void);
 	std::string getChannelKey(void);
 	int getChannelCounter(void);
+
+	// Nested classes
+	class ERR_INVITEONLYCHAN : public std::exception{
+		
+	};
 };

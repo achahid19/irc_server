@@ -301,7 +301,6 @@ void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
 		);
 	}
 	*bytes_read += bytes;
-	::printMsg("bytes: " + bytes, INFO_LOGS, COLOR_BLUE);
 
 	user->append(buffer);
 	if (!user->isUserRegistred()) {
@@ -319,7 +318,7 @@ void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
 		ircMessage.parseMessage();
 		
 		std::string command = ircMessage.getCommand();
-		::printMsg("Processing command::: " + command, INFO_LOGS, COLOR_BLUE);
+		::printMsg("Processing command: " + command, INFO_LOGS, COLOR_BLUE);
 
 		if (command == "QUIT") {
 			*bytes_read = 0; // Close connection - cleanup will be handled in _eventsLoop
@@ -330,7 +329,7 @@ void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
 				std::string key = (ircMessage.getParams().size() > 1) ? ircMessage.getParams()[1] : "";
 				joinCmd(*user, channelName, key);
 			} else {
-				user->sendMessage(":jarvis_server 461 " + user->getNickname() + " JOIN :Not enough parameterss\r\n");
+				user->sendMessage(":jarvis_server 461 " + user->getNickname() + " JOIN :Not enough parameters\r\n");
 			}
 		}
 		else if (command == "PING") {

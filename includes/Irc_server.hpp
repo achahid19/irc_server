@@ -115,6 +115,16 @@ public:
 			return;
 		}
 
+		try
+		{
+			_channels[cleanChannelName]->addUser(user, key);
+		}
+		catch(const std::string e)
+		{
+			
+		}
+		
+
 		// Try to add user to existing channel
 		int errCode = _channels[cleanChannelName]->addUser(user, key);
 		

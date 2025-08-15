@@ -70,6 +70,8 @@ int Channel::addUser(User& newUser, std::string key) {
 	if (_isInviteOnly) {
 		// User not invited to +i channel
 		return 473; // ERR_INVITEONLYCHAN
+		newUser.sendMessage();
+		return;
 	}
 	
 	// Check if user is banned
@@ -144,7 +146,7 @@ bool Channel::ifTopic(void) {
 // Messaging
 void Channel::broadcastMsg(User& sender, std::string message) {
 	for (std::map<std::string, User*>::iterator it = _channelUsers.begin(); it != _channelUsers.end(); it++) {
-		if (it->first != sender.getNickname()) {
+		if (it->first != sender.getUsername()) {
 			it->second->sendMessage(message);
 		}
 	}
