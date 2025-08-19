@@ -12,6 +12,7 @@
 #include <cerrno> // errno for error handling
 #include <signal.h> // signal handling
 
+#include <sstream> // for std::ostringstream
 #include <map>
 #include <vector>
 #include <set>
@@ -263,6 +264,66 @@ public:
 	// 	}
 		
 	// }
+
+	// ...existing code...
+
+void infoCmd(User &user, const std::string &channelName = "") {
+    // List all channels if no channelName is provided
+    if (channelName.empty()) {
+        std::ostringstream oss;
+        oss << ":jarvis_server INFO :There are " << _channels.size() << " channel(s): ";
+        std::map<std::string, Channel*>::iterator it;
+        for (it = _channels.begin(); it != _channels.end(); ++it) {
+            oss << "#" << it->first << " ";
+        }
+        oss << "\r\n";
+        user.sendMessage(oss.str());
+        user.sendMessage(":jarvis_server INFO :To get info about a channel, type: /INFO #channelname\r\n");
+        return;
+    }
+
+    // Remove # if present
+    std::string cleanChannelName = channelName;
+    if (channelName[0] == '#')
+        cleanChannelName = channelName.substr(1);
+
+    if (!isChannelExist(cleanChannelName)) {
+        user.sendMessage(":jarvis_server 403 " + user.getNickname() + " " + channelName + " :No such channel\r\n");
+        return;
+    }
+
+    Channel *chan = _channels[cleanChannelName];
+    std::ostringstream info;
+    info << ":jarvis_server INFO :Channel #" << cleanChannelName << "\r\n";
+    info << ":jarvis_server INFO :Topic: " << (chan->ifTopic() ? chan->getChannelTopic() : "No topic set") << "\r\n";
+    info << ":jarvis_server INFO :User count: " << chan->getChannelCounter() << "\r\n";
+    info << ":jarvis_server INFO :Users: " << chan->usersNames() << "\r\n";
+    user.sendMessage(info.str());
+}
+
+// ...existing code...
+
+
+void listUsersCmd(User &requestingUser) {
+    // Check if there are any connected users
+    if (_connections.empty()) {
+        requestingUser.sendMessage(":jarvis_server 401 " + requestingUser.getNickname() + " :No users are currently connected\r\n");
+        return;
+    }
+
+    // Build the list of users
+    std::ostringstream oss;
+    oss << ":jarvis_server USERS :There are " << _connections.size() << " user(s) connected:\r\n";
+
+    for (std::map<int, User*>::iterator it = _connections.begin(); it != _connections.end(); ++it) {
+        User *user = it->second;
+        oss << ":jarvis_server USERS :Nickname: " << user->getNickname()
+            << ", Username: " << user->getUsername() << "\r\n";
+    }
+
+    // Send the list to the requesting user
+    requestingUser.sendMessage(oss.str());
+}
 
 	bool	isChannelExist( std::string channelName ){
 		return _channels.find(channelName) != _channels.end();

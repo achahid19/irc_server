@@ -70,8 +70,8 @@ int Channel::addUser(User& newUser, std::string key) {
 	if (_isInviteOnly) {
 		// User not invited to +i channel
 		return 473; // ERR_INVITEONLYCHAN
-		newUser.sendMessage();
-		return;
+		// newUser.sendMessage();
+		// return;
 	}
 	
 	// Check if user is banned

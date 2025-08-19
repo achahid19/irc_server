@@ -295,7 +295,16 @@ void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
 
 	memset(buffer, 0, sizeof(buffer));
 	bytes = recv(clientSocket, buffer, sizeof(buffer), 0);
+	if (bytes > 0){
+		buffer[bytes] = '\0'; // Null-terminate the string
+		::printMsg(
+			"Received from client " + ::to_string(clientSocket) + ": " + buffer,
+			INFO_LOGS,
+			COLOR_BLUE
+		);
+	}
 	if (bytes < 0) {
+		
 		::printErr(
 			"Error reading client socket " + ::to_string(clientSocket)
 		);
@@ -337,6 +346,30 @@ void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
 				std::string response = ":jarvis_server PONG jarvis_server :" + ircMessage.getParams()[0] + "\r\n";
 				user->sendMessage(response);
 			}
+		}
+		else if (command == "PART"){
+			std::string channelName = ircMessage.getParams()[0];
+				std::string reason = (ircMessage.getParams().size() > 1) ? ircMessage.getParams()[1] : "";
+				partCmd(*user, channelName, reason);
+		}
+
+
+
+		else if (command == "INFO") {
+    if (ircMessage.getParams().size() == 0) {
+        infoCmd(*user);
+    } else {
+        infoCmd(*user, ircMessage.getParams()[0]);
+    }
+}
+		else if (command == "USERS") {
+    listUsersCmd(*user);
+}
+		
+		else if (command == "POPO"){
+			user->sendMessage("popopopop\r\n");
+				// std::string key = (ircMessage.getParams().size() > 1) ? ircMessage.getParams()[1] : "";
+				
 		}
 		// else if (command == "msg"){
 		// 	if (ircMessage.getParams().size() > 0){
