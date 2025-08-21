@@ -116,16 +116,6 @@ public:
 			return;
 		}
 
-		try
-		{
-			_channels[cleanChannelName]->addUser(user, key);
-		}
-		catch(const std::string e)
-		{
-			
-		}
-		
-
 		// Try to add user to existing channel
 		int errCode = _channels[cleanChannelName]->addUser(user, key);
 		
@@ -173,18 +163,37 @@ public:
 	void	partCmd( User &user, std::string channelName, std::string reason ){
 		if (isChannelExist(channelName) == false){
 			// 403 ERR_NOSUCHCHANNEL <channel> :No such channel
+			user.sendMessage(":jarvis_server 403 " + user.getNickname() + " " + channelName + " :No such channel\r\n");
 			return ;
 		}
-		_channels[channelName]->removeUser(user);
-		if ( _channels[channelName]->getChannelCounter() == 0){
-			//clear and remove the
-			delete _channels[channelName];
-			_channels.erase(channelName);
-		} else {
-			// :nick!user@host PART #channel [:optional message]
-			std::string message(
-				user.getPrefix() + " PART " + _channels[user.getNickname()]->getChannelName() + reason + "\r\n");
-			_channels[user.getNickname()]->broadcastMsg(user, message);
+		
+		// Remove # from channel name for internal storage
+		std::string cleanChannelName = channelName;
+		if (channelName[0] == '#') {
+			cleanChannelName = channelName.substr(1);
+		}
+		
+		// Check if user is in the channel
+		if (!_channels[cleanChannelName]->isUserInChannel(user.getNickname())) {
+			user.sendMessage(":jarvis_server 442 " + user.getNickname() + " " + channelName + " :You're not on that channel\r\n");
+			return;
+		}
+		
+		// Broadcast PART message to channel before removing user
+		std::string partMsg = user.getPrefix() + " PART " + channelName;
+		if (!reason.empty()) {
+			partMsg += " :" + reason;
+		}
+		partMsg += "\r\n";
+		_channels[cleanChannelName]->broadcastMsg(user, partMsg);
+		
+		// Remove user from channel
+		_channels[cleanChannelName]->removeUser(user);
+		
+		// Check if channel is empty and remove it
+		if (_channels[cleanChannelName]->getChannelCounter() == 0){
+			delete _channels[cleanChannelName];
+			_channels.erase(cleanChannelName);
 		}
 	}
 
@@ -326,7 +335,18 @@ void listUsersCmd(User &requestingUser) {
 }
 
 	bool	isChannelExist( std::string channelName ){
-		return _channels.find(channelName) != _channels.end();
+		bool result = _channels.find(channelName) != _channels.end();
+		
+		// Debug output
+		std::cout << "[DEBUG] isChannelExist(" << channelName << ") called" << std::endl;
+		std::cout << "[DEBUG] Result: " << (result ? "true" : "false") << std::endl;
+		std::cout << "[DEBUG] Available channels: ";
+		for (std::map<std::string, Channel*>::iterator it = _channels.begin(); it != _channels.end(); ++it) {
+			std::cout << it->first << " ";
+		}
+		std::cout << std::endl;
+		
+		return result;
 	}
 
 	// void	HandleErrors( int errorCode, User& user, Channel &channel){

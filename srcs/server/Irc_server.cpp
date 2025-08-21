@@ -6,7 +6,7 @@
 
 /**
  * TODO list -
- * 
+ *
  * make a destructor to close all sockets and free memory. DONE
  * add doc strings for all methods. IN PROGRESS
  * Handle NICK, USER change commands.
@@ -14,15 +14,15 @@
  */
 
 bool IrcServer::_running = true; // flag to control server running state, for ctrl+c handling
- 
+
 /**
  * IrcServer - IrcServer constructor
- * 
+ *
  * This method will set and initialize server data
- * 
+ *
  * @param port: the port number on which the irc server runs on
  * @param password: the password used by client's to access this server
- * 
+ *
  * Return: void.
  */
 IrcServer::IrcServer( int port, std::string const password )
@@ -46,10 +46,10 @@ IrcServer::IrcServer( int port, std::string const password )
 
 /**
  * ~IrcServer - IrcServer destructor
- * 
+ *
  * This method will close all opened file descriptors,
  * delete all User objects, and clear the connections map.
- * 
+ *
  * Return: void.
  */
 IrcServer::~IrcServer( void ) {
@@ -80,11 +80,11 @@ IrcServer::~IrcServer( void ) {
 
 /**
  * bindSocket - IrcServer bindSocket method
- * 
+ *
  * This method will create a socket, set the socket options
  * to reuse the address, and bind the socket to localhost
  * and specified port.
- * 
+ *
  * Return: void.
  */
 void	IrcServer::_CreateBindListeningSocket( void ) {
@@ -111,24 +111,24 @@ void	IrcServer::_CreateBindListeningSocket( void ) {
 
 /**
  * listenSocket - IrcServer listenSocket method
- * 
+ *
  * This method will listen on the socket for incoming connections.
  * It sets the maximum number of connections to SOMAXCONN.
- * 
+ *
  * Return: void.
  */
 void	IrcServer::_listenSocket( void ) {
 	if (listen(this->_listeningSocket, SOMAXCONN) < 0) {
 		throw IrcServer::server_error("Failed to listen on socket");
 	}
-}	
+}
 
 /**
  * _epollCreate - IrcServer epollCreate instance method
- * 
+ *
  * This method will create an epoll instance,
  * add the listening socket to it, and set up the events.
- * 
+ *
  * Return: void.
  */
 void	IrcServer::_epollCreate( void ) {
@@ -151,13 +151,13 @@ void	IrcServer::_epollCreate( void ) {
 
 /**
  * serverRun - IrcServer serverRun method
- * 
+ *
  * This method will run the server, waiting for events
  * and handling them accordingly. It uses epoll to efficiently
  * wait for events on the listening socket and connected clients.
  * It will handle new connections, read data from clients,
  * and process user commands.
- * 
+ *
  * Return: void.
  */
 void	IrcServer::serverRun( void ) {
@@ -178,19 +178,19 @@ void	IrcServer::serverRun( void ) {
 			INFO_LOGS,
 			COLOR_GRAY
 		);
-	
+
 		this->_eventsLoop(eventsCount);
 	};
 }
 
 /**
  * _connectUser - IrcServer connectUser method
- * 
+ *
  * This method will accept a new user connection,
  * create a new User object for the connection,
  * and add the user to the epoll instance for further events handling.
  * It also updates the connections map and the events map.
- * 
+ *
  * Return: void.
  */
 void	IrcServer::_connectUser( void ) {
@@ -219,13 +219,13 @@ void	IrcServer::_connectUser( void ) {
 
 /**
  * _eventsLoop - IrcServer eventsLoop method
- * 
+ *
  * This method will loop through the events received from epoll,
  * handling new connections and reading data from connected clients.
  * It will also handle user disconnections and cleanup.
- * 
+ *
  * @param eventsCount: the number of events to handle
- * 
+ *
  * Return: void.
  */
 void	IrcServer::_eventsLoop( int eventsCount ) {
@@ -276,14 +276,14 @@ void	IrcServer::_eventsLoop( int eventsCount ) {
 
 /**
  * _handleRequest - IrcServer handleRequest method
- * 
+ *
  * This method will read data from the client socket,
  * process the user's commands, and handle user registration.
  * It will also handle disconnections if the user sends a QUIT command.
- * 
+ *
  * @param eventIndex: the index of the event in the events list
  * @param bytes_read: pointer to an integer to store the number of bytes read
- * 
+ *
  * Return: void.
  */
 void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
@@ -304,7 +304,7 @@ void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
 		);
 	}
 	if (bytes < 0) {
-		
+
 		::printErr(
 			"Error reading client socket " + ::to_string(clientSocket)
 		);
@@ -325,7 +325,7 @@ void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
 		 */
 		Irc_message ircMessage(buffer);
 		ircMessage.parseMessage();
-		
+
 		std::string command = ircMessage.getCommand();
 		::printMsg("Processing command: " + command, INFO_LOGS, COLOR_BLUE);
 
@@ -365,12 +365,50 @@ void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
 		else if (command == "USERS") {
     listUsersCmd(*user);
 }
-		
+
 		else if (command == "POPO"){
 			user->sendMessage("popopopop\r\n");
 				// std::string key = (ircMessage.getParams().size() > 1) ? ircMessage.getParams()[1] : "";
-				
+
 		}
+		else if (command == "PRIVMSG") {
+    if (ircMessage.getParams().size() > 0) {
+        std::string target = ircMessage.getParams()[0];
+        std::string msg = ircMessage.getTrailing();
+        
+        // If no trailing, try to get from params (fallback for simple messages)
+        if (msg.empty() && ircMessage.getParams().size() > 1) {
+            msg = ircMessage.getParams()[1];
+        }
+        
+        if (msg.empty()) {
+            user->sendMessage(":jarvis_server 412 " + user->getNickname() + " :No text to send\r\n");
+            return;
+        }
+        
+        if (target[0] == '#') {
+            std::string cleanChannelName = target.substr(1);
+            if (isChannelExist(cleanChannelName)) {
+                // Check if user is in the channel
+                if (!_channels[cleanChannelName]->isUserInChannel(user->getNickname())) {
+                    user->sendMessage(":jarvis_server 404 " + user->getNickname() + " " + target + " :Cannot send to channel\r\n");
+                    return;
+                }
+                
+                std::string formattedMsg = user->getPrefix() + " PRIVMSG " + target + " :" + msg + "\r\n";
+                _channels[cleanChannelName]->broadcastMsg(*user, formattedMsg);
+            } else {
+                user->sendMessage(":jarvis_server 403 " + user->getNickname() + " " + target + " :No such channel\r\n");
+            }
+        } else {
+            // handle private message to user
+            // TODO: Implement private messaging between users
+            user->sendMessage(":jarvis_server 401 " + user->getNickname() + " " + target + " :No such nick/channel\r\n");
+        }
+    } else {
+        user->sendMessage(":jarvis_server 411 " + user->getNickname() + " :No recipient given (PRIVMSG)\r\n");
+    }
+}
 		// else if (command == "msg"){
 		// 	if (ircMessage.getParams().size() > 0){
 		// 		std::string recieverNick = ircMessage.getParams()[1];
@@ -390,11 +428,11 @@ void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
 
 /**
  * server_error - IrcServer server_error constructor
- * 
+ *
  * This method will set the error message
- * 
+ *
  * @param msg: the error message to be set
- * 
+ *
  * Return: void.
  */
 IrcServer::server_error::server_error( const std::string &msg )
@@ -402,19 +440,19 @@ IrcServer::server_error::server_error( const std::string &msg )
 
 /**
  * ~server_error - IrcServer server_error destructor
- * 
+ *
  * This method will be called when the server_error object is destroyed.
  * It does not throw any exceptions.
- * 
+ *
  * Return: void.
  */
 IrcServer::server_error::~server_error( void ) throw() {}
 
 /**
  * what - IrcServer server_error what method
- * 
+ *
  * This method will return the error message
- * 
+ *
  * Return: const char* - the error message.
  */
 const char* IrcServer::server_error::what( void ) const throw() {
@@ -423,11 +461,11 @@ const char* IrcServer::server_error::what( void ) const throw() {
 
 /**
  * server_error - IrcServer server_error constructor
- * 
+ *
  * This method will set the error message
- * 
+ *
  * @param msg: the error message to be set
- * 
+ *
  * Return: void.
  */
 IrcServer::user_connection_error::user_connection_error( const std::string &msg )
@@ -435,19 +473,19 @@ IrcServer::user_connection_error::user_connection_error( const std::string &msg 
 
 /**
  * ~server_error - IrcServer server_error destructor
- * 
+ *
  * This method will be called when the server_error object is destroyed.
  * It does not throw any exceptions.
- * 
+ *
  * Return: void.
  */
 IrcServer::user_connection_error::~user_connection_error( void ) throw() {};
 
 /**
  * what - IrcServer server_error what method
- * 
+ *
  * This method will return the error message
- * 
+ *
  * Return: const char* - the error message.
  */
 const char* IrcServer::user_connection_error::what( void ) const throw() {
@@ -456,9 +494,9 @@ const char* IrcServer::user_connection_error::what( void ) const throw() {
 
 /**
  * signalHandler - signal handler for SIGINT
- * 
+ *
  * @param signal: the signal number (e.g., SIGINT)
- * 
+ *
  * Return: void.
  */
 void	IrcServer::signalHandler( int signal ) {

@@ -1,6 +1,7 @@
 #include "Channel.hpp"
 #include "User.hpp"
 #include <cstdlib> // for atoi
+#include <iostream> // for debug prints
 
 // Constructors and Destructor
 Channel::Channel() {
@@ -51,11 +52,17 @@ std::string Channel::usersNames(void) {
 	std::string names;
 	for (std::map<std::string, User*>::iterator it = _channelUsers.begin(); it != _channelUsers.end(); it++) {
 		if (isOperator(it->first)) {
-			names.append(it->first + " @opuser ");
+			names.append("@" + it->first + " ");
 		} else {
 			names.append(it->first + " ");
 		}
 	}
+	
+	// Debug output
+	std::cout << "[DEBUG] usersNames() called for channel: " << _channelName << std::endl;
+	std::cout << "[DEBUG] Channel users map size: " << _channelUsers.size() << std::endl;
+	std::cout << "[DEBUG] Generated names: " << names << std::endl;
+	
 	return names;
 }
 
@@ -65,7 +72,7 @@ int Channel::addUser(User& newUser, std::string key) {
 		// Already in the channel - silently ignore (no error)
 		return 0;
 	}
-	
+
 	// Check invite-only mode
 	if (_isInviteOnly) {
 		// User not invited to +i channel
@@ -73,34 +80,38 @@ int Channel::addUser(User& newUser, std::string key) {
 		// newUser.sendMessage();
 		// return;
 	}
-	
+
 	// Check if user is banned
 	if (isUserBanned(newUser.getNickname()) == true) {
 		// Banned from channel
 		return 474; // ERR_BANNEDFROMCHAN
 	}
-	
+
 	// Check channel key
 	if (_isKeyReq && (key != _channelKey)) {
 		// Wrong key for +k channel
 		return 475; // ERR_BADCHANNELKEY
 	}
-	
+
 	// Check if channel is full
 	if (_isfull) {
 		// Channel is full (+l mode)
 		return 471; // ERR_CHANNELISFULL
 	}
-	
+
 	// All checks passed - add user to channel
 	_channelUsers[newUser.getNickname()] = &newUser;
 	_channelUserCounter++;
-	
+
 	// Update full status if limit is set
 	if (_channelUserCounter >= _channelMaxUsers && _isLimitSet) {
 		_isfull = true;
 	}
 	
+	// Debug output
+	std::cout << "[DEBUG] User " << newUser.getNickname() << " added to channel " << _channelName << std::endl;
+	std::cout << "[DEBUG] Channel now has " << _channelUserCounter << " users" << std::endl;
+
 	return 0; // Success
 }
 
@@ -112,6 +123,10 @@ void Channel::removeUser(User &user) {
 	_channelUsers.erase(user.getNickname());
 	_channelOperators.erase(user.getNickname());
 	_channelUserCounter--;
+	
+	// Debug output
+	std::cout << "[DEBUG] User " << user.getNickname() << " removed from channel " << _channelName << std::endl;
+	std::cout << "[DEBUG] Channel now has " << _channelUserCounter << " users" << std::endl;
 }
 
 void Channel::pingUser(User &user, std::string message) {
@@ -128,28 +143,74 @@ void Channel::pingUser(User &user, std::string message) {
 
 // Channel checks
 bool Channel::isUserInChannel(std::string nickname) {
-	return _channelUsers.find(nickname) != _channelUsers.end();
+	bool result = _channelUsers.find(nickname) != _channelUsers.end();
+	
+	// Debug output
+	std::cout << "[DEBUG] isUserInChannel(" << nickname << ") called for channel: " << _channelName << std::endl;
+	std::cout << "[DEBUG] Result: " << (result ? "true" : "false") << std::endl;
+	std::cout << "[DEBUG] Channel users: ";
+	for (std::map<std::string, User*>::iterator it = _channelUsers.begin(); it != _channelUsers.end(); ++it) {
+		std::cout << it->first << " ";
+	}
+	std::cout << std::endl;
+	
+	return result;
 }
 
 bool Channel::isUserBanned(std::string user) {
-	return _channelBannedUsers.find(user) != _channelBannedUsers.end();
+	bool result = _channelBannedUsers.find(user) != _channelBannedUsers.end();
+	
+	// Debug output
+	std::cout << "[DEBUG] isUserBanned(" << user << ") called for channel: " << _channelName << std::endl;
+	std::cout << "[DEBUG] Result: " << (result ? "true" : "false") << std::endl;
+	
+	return result;
 }
 
 bool Channel::isOperator(std::string user) {
-	return _channelOperators.find(user) != _channelOperators.end();
+	bool result = _channelOperators.find(user) != _channelOperators.end();
+	
+	// Debug output
+	std::cout << "[DEBUG] isOperator(" << user << ") called for channel: " << _channelName << std::endl;
+	std::cout << "[DEBUG] Result: " << (result ? "true" : "false") << std::endl;
+	std::cout << "[DEBUG] Channel operators: ";
+	for (std::set<std::string>::iterator it = _channelOperators.begin(); it != _channelOperators.end(); ++it) {
+		std::cout << *it << " ";
+	}
+	std::cout << std::endl;
+	
+	return result;
 }
 
 bool Channel::ifTopic(void) {
-	return this->_isTopicSet;
+	bool result = this->_isTopicSet;
+	
+	// Debug output
+	std::cout << "[DEBUG] ifTopic() called for channel: " << _channelName << std::endl;
+	std::cout << "[DEBUG] Result: " << (result ? "true" : "false") << std::endl;
+	
+	return result;
 }
 
 // Messaging
 void Channel::broadcastMsg(User& sender, std::string message) {
+    std::cout << "[DEBUG] broadcastMsg called for channel: " << _channelName << std::endl;
+    std::cout << "[DEBUG] Sender: " << sender.getNickname() << std::endl;
+    std::cout << "[DEBUG] Message: " << message << std::endl;
+    std::cout << "[DEBUG] Channel users: ";
+    for (std::map<std::string, User*>::iterator it = _channelUsers.begin(); it != _channelUsers.end(); ++it)
+        std::cout << it->first << " ";
+    std::cout << std::endl;
+    
+    int messagesSent = 0;
 	for (std::map<std::string, User*>::iterator it = _channelUsers.begin(); it != _channelUsers.end(); it++) {
-		if (it->first != sender.getUsername()) {
+		if (it->first != sender.getNickname()) {
+			std::cout << "[DEBUG] Sending message to user: " << it->first << std::endl;
 			it->second->sendMessage(message);
+			messagesSent++;
 		}
 	}
+	std::cout << "[DEBUG] Total messages sent: " << messagesSent << std::endl;
 }
 
 // Topic management
@@ -314,21 +375,51 @@ void Channel::kickUser(User &user, std::string badUser) {
 
 // Getters
 std::string Channel::getChannelName(void) {
-	return this->_channelName;
+	std::string result = this->_channelName;
+	
+	// Debug output
+	std::cout << "[DEBUG] getChannelName() called for channel: " << _channelName << std::endl;
+	std::cout << "[DEBUG] Result: " << result << std::endl;
+	
+	return result;
 }
 
 std::string Channel::getChannelTopic(void) {
-	return this->_channelTopic;
+	std::string result = this->_channelTopic;
+	
+	// Debug output
+	std::cout << "[DEBUG] getChannelTopic() called for channel: " << _channelName << std::endl;
+	std::cout << "[DEBUG] Result: " << result << std::endl;
+	
+	return result;
 }
 
 std::string Channel::getChannelMode(void) {
-	return this->_channelMode;
+	std::string result = this->_channelMode;
+	
+	// Debug output
+	std::cout << "[DEBUG] getChannelMode() called for channel: " << _channelName << std::endl;
+	std::cout << "[DEBUG] Result: " << result << std::endl;
+	
+	return result;
 }
 
 std::string Channel::getChannelKey(void) {
-	return this->_channelKey;
+	std::string result = this->_channelKey;
+	
+	// Debug output
+	std::cout << "[DEBUG] getChannelKey() called for channel: " << _channelName << std::endl;
+	std::cout << "[DEBUG] Result: " << result << std::endl;
+	
+	return result;
 }
 
 int Channel::getChannelCounter(void) {
-	return this->_channelUserCounter;
-} 
+	int result = this->_channelUserCounter;
+	
+	// Debug output
+	std::cout << "[DEBUG] getChannelCounter() called for channel: " << _channelName << std::endl;
+	std::cout << "[DEBUG] Result: " << result << std::endl;
+	
+	return result;
+}

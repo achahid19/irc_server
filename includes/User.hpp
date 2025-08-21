@@ -7,6 +7,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <algorithm>
+#include <cstdio>
 
 enum user_registration_state {
 	UNREGISTRED, // just connected
@@ -63,11 +64,22 @@ public:
 
 	//CHA
 	void sendMessage( std::string message ){
-		//what evermsge it take it will just structure it
-		send(_sock, message.c_str(), message.length(), 0);
+		std::cout << "[DEBUG] sendMessage called for user: " << getNickname() << std::endl;
+		std::cout << "[DEBUG] Message: " << message << std::endl;
+		ssize_t sent = send(_sock, message.c_str(), message.length(), 0);
+		std::cout << "[DEBUG] send() returned: " << sent << " for user: " << getNickname() << std::endl;
+		if (sent == -1) perror("send");
 	}
 	std::string getPrefix() const {
-		return ":" + this->getNickname() + "!" + this->getUsername() + "@localhost";
+		std::string nickname = this->getNickname();
+		std::string username = this->getUsername();
+		
+		// Check if nickname and username are set
+		if (nickname.empty() || username.empty()) {
+			return ":unknown!unknown@localhost";
+		}
+		
+		return ":" + nickname + "!" + username + "@localhost";
 	}
-	
+
 };
