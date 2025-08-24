@@ -348,13 +348,11 @@ void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
 			}
 		}
 		else if (command == "PART"){
+			
 			std::string channelName = ircMessage.getParams()[0];
-				std::string reason = (ircMessage.getParams().size() > 1) ? ircMessage.getParams()[1] : "";
-				partCmd(*user, channelName, reason);
+			std::string reason = (ircMessage.getParams().size() > 1) ? ircMessage.getParams()[1] : "";
+			partCmd(*user, channelName.substr(1), reason);
 		}
-
-
-
 		else if (command == "INFO") {
     if (ircMessage.getParams().size() == 0) {
         infoCmd(*user);
@@ -362,6 +360,7 @@ void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
         infoCmd(*user, ircMessage.getParams()[0]);
     }
 }
+
 		else if (command == "USERS") {
     listUsersCmd(*user);
 }
@@ -372,42 +371,50 @@ void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
 
 		}
 		else if (command == "PRIVMSG") {
-    if (ircMessage.getParams().size() > 0) {
-        std::string target = ircMessage.getParams()[0];
-        std::string msg = ircMessage.getTrailing();
-        
-        // If no trailing, try to get from params (fallback for simple messages)
-        if (msg.empty() && ircMessage.getParams().size() > 1) {
-            msg = ircMessage.getParams()[1];
-        }
-        
-        if (msg.empty()) {
-            user->sendMessage(":jarvis_server 412 " + user->getNickname() + " :No text to send\r\n");
-            return;
-        }
-        
-        if (target[0] == '#') {
-            std::string cleanChannelName = target.substr(1);
-            if (isChannelExist(cleanChannelName)) {
-                // Check if user is in the channel
-                if (!_channels[cleanChannelName]->isUserInChannel(user->getNickname())) {
-                    user->sendMessage(":jarvis_server 404 " + user->getNickname() + " " + target + " :Cannot send to channel\r\n");
-                    return;
-                }
-                
-                std::string formattedMsg = user->getPrefix() + " PRIVMSG " + target + " :" + msg + "\r\n";
-                _channels[cleanChannelName]->broadcastMsg(*user, formattedMsg);
-            } else {
-                user->sendMessage(":jarvis_server 403 " + user->getNickname() + " " + target + " :No such channel\r\n");
-            }
-        } else {
-            // handle private message to user
-            // TODO: Implement private messaging between users
-            user->sendMessage(":jarvis_server 401 " + user->getNickname() + " " + target + " :No such nick/channel\r\n");
-        }
-    } else {
-        user->sendMessage(":jarvis_server 411 " + user->getNickname() + " :No recipient given (PRIVMSG)\r\n");
-    }
+			if (ircMessage.getParams().size() > 0) {
+				std::string target = ircMessage.getParams()[0];
+				std::string msg = ircMessage.getTrailing();
+				
+				// If no trailing, try to get from params (fallback for simple messages)
+				if (msg.empty() && ircMessage.getParams().size() > 1) {
+					msg = ircMessage.getParams()[1];
+				}
+				
+				if (msg.empty()) {
+					user->sendMessage(":jarvis_server 412 " + user->getNickname() + " :No text to send\r\n");
+					return;
+				}
+				
+				if (target[0] == '#') {
+					std::string cleanChannelName = target.substr(1);
+					if (isChannelExist(cleanChannelName)) {
+						// Check if user is in the channel
+						if (!_channels[cleanChannelName]->isUserInChannel(user->getNickname())) {
+							user->sendMessage(":jarvis_server 404 " + user->getNickname() + " " + target + " :Cannot send to channel\r\n");
+							return;
+						}
+						
+						std::string formattedMsg = user->getPrefix() + " PRIVMSG " + target + " :" + msg + "\r\n";
+						_channels[cleanChannelName]->broadcastMsg(*user, formattedMsg);
+					} else {
+						user->sendMessage(":jarvis_server 403 " + user->getNickname() + " " + target + " :No such channel\r\n");
+					}
+				} else {
+					// handle private message to user
+					// TODO: Implement private messaging between users
+					// check if user regersted bason nick 
+					User* reciever = findUser( target );
+					if (reciever != 0){
+						std::cout << "tar: " << target << std::endl;
+						std::string formattedMsg = user->getPrefix() + " PRIVMSG " + target + " :" + msg + "\r\n";
+						reciever->sendMessage(formattedMsg);
+					}
+					else
+						user->sendMessage(":jarvis_server 401 " + user->getNickname() + " " + target + " :No such nick/channel\r\n");
+				}
+			} else {
+				user->sendMessage(":jarvis_server 411 " + user->getNickname() + " :No recipient given (PRIVMSG)\r\n");
+			}
 }
 		// else if (command == "msg"){
 		// 	if (ircMessage.getParams().size() > 0){
@@ -418,6 +425,36 @@ void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
 
 		// 	}
 		// }
+
+		else if (command == "TOPIC"){
+			if (ircMessage.getParams().size() > 0){
+				//check channel is exicst
+				std::string channelname = ircMessage.getParams()[0];
+				if (channelname[0] != '#') return;
+				std::string cleanChannelName = channelname.substr(1);
+				if (!isChannelExist(cleanChannelName)) return;
+				if (ircMessage.getTrailing().empty()){
+					// return topic 
+					std::string reply = ": jarvis_server 332 " + user->getNickname() + " #" + cleanChannelName + " :" + _channels[cleanChannelName]->getChannelTopic() + "\r\n";
+					user->sendMessage( reply );
+					return ;
+				}
+				_channels[cleanChannelName]->setChannelTopic(*user, ircMessage.getTrailing());
+				std::string reply = ": jarvis_server 332 " + user->getNickname() + " #" + cleanChannelName + " :" + _channels[cleanChannelName]->getChannelTopic() + "\r\n";
+				user->sendMessage( reply );
+				
+			}
+		}
+
+		else if (command == "msg"){
+			if (ircMessage.getParams().size() > 0){
+				std::string receiverNick = ircMessage.getParams()[0];
+				std::string msg = ircMessage.getTrailing();
+				User *receiver = findUser( receiverNick );
+				( receiver != 0) ? receiver->sendMessage( user->getPrefix() + " PRIVMSG " + receiverNick + " :" + msg + "\r\n" ) : user->sendMessage(":jarvis_server 411 " + user->getNickname() + " :No recipient given (PRIVMSG)\r\n") ;
+			}
+		}
+
 		else {
 			::printMsg("Command not implemented yet: " + command, INFO_LOGS, COLOR_YELLOW);
 		}

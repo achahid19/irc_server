@@ -333,8 +333,17 @@ void listUsersCmd(User &requestingUser) {
     // Send the list to the requesting user
     requestingUser.sendMessage(oss.str());
 }
+// TODO CHANGE USERS STORED AT A SET
+User	*findUser( std::string nick ){
+	for (std::map<int, User*>::iterator it = _connections.begin(); it != _connections.end(); it++){
+		if (it->second->getNickname() == nick){
+			return it->second;
+		}
+	}
+	return 0;
+}
 
-	bool	isChannelExist( std::string channelName ){
+bool	isChannelExist( std::string channelName ){
 		bool result = _channels.find(channelName) != _channels.end();
 		
 		// Debug output

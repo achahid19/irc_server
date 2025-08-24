@@ -8,7 +8,7 @@ SRCS =	$(addprefix srcs/, main.cpp ) \
 		$(addprefix srcs/user/, User.cpp ) \
 		$(addprefix srcs/utils/, utils.cpp ) \
 		$(addprefix srcs/parsing/, Irc_message.cpp ) \
-		$(addprefix srcs/, Channel.cpp )
+		$(addprefix srcs/channel/, Channel.cpp )
 
 HEADERS = includes/
 
