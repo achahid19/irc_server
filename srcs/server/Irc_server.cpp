@@ -42,6 +42,8 @@ IrcServer::IrcServer( int port, std::string const password )
 	);
 	this->_epollCreate();
 	this->_connectionsCount = 0;
+	//BONUS create bot
+	this->_connections.
 }
 
 /**
@@ -374,7 +376,19 @@ void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
 			if (ircMessage.getParams().size() > 0) {
 				std::string target = ircMessage.getParams()[0];
 				std::string msg = ircMessage.getTrailing();
-				
+
+
+				// DEBUG: Add these lines
+			std::cout << "[DEBUG] PRIVMSG target: '" << target << "'" << std::endl;
+			std::cout << "[DEBUG] PRIVMSG message: '" << msg << "'" << std::endl;
+			std::cout << "[DEBUG] Params size: " << ircMessage.getParams().size() << std::endl;
+			
+			// If no trailing, try to get from params
+			if (msg.empty() && ircMessage.getParams().size() > 1) {
+				msg = ircMessage.getParams()[1];
+				std::cout << "[DEBUG] Using param[1]: '" << msg << "'" << std::endl;
+			}
+					
 				// If no trailing, try to get from params (fallback for simple messages)
 				if (msg.empty() && ircMessage.getParams().size() > 1) {
 					msg = ircMessage.getParams()[1];
@@ -435,12 +449,12 @@ void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
 				if (!isChannelExist(cleanChannelName)) return;
 				if (ircMessage.getTrailing().empty()){
 					// return topic 
-					std::string reply = ": jarvis_server 332 " + user->getNickname() + " #" + cleanChannelName + " :" + _channels[cleanChannelName]->getChannelTopic() + "\r\n";
+					std::string reply = ":jarvis_server 332 " + user->getNickname() + " #" + cleanChannelName + " :" + _channels[cleanChannelName]->getChannelTopic() + "\r\n";
 					user->sendMessage( reply );
 					return ;
 				}
 				_channels[cleanChannelName]->setChannelTopic(*user, ircMessage.getTrailing());
-				std::string reply = ": jarvis_server 332 " + user->getNickname() + " #" + cleanChannelName + " :" + _channels[cleanChannelName]->getChannelTopic() + "\r\n";
+				std::string reply = ":jarvis_server 332 " + user->getNickname() + " #" + cleanChannelName + " :" + _channels[cleanChannelName]->getChannelTopic() + "\r\n";
 				user->sendMessage( reply );
 				
 			}
