@@ -3,6 +3,7 @@
 #include <string>
 #include <map>
 #include <set>
+#include "utils.hpp"
 
 // Forward declaration
 class User;
@@ -58,9 +59,9 @@ public:
 	void setTopicOps(User &user);
 	void removeTopicOps(User &user);
 	void setKey(User &user, std::string key);
-	void removeKey(User &user, std::string key);
+	void removeKey(User &user);
 	void setLimit(User &user, std::string limit);
-	void removeLimit(User &user, std::string limit);
+	void removeLimit(User &user);
 	void setOps(User &user, std::string targetUser);
 	void removeOps(User &user, std::string targetUser);
 
@@ -74,8 +75,15 @@ public:
 	std::string getChannelKey(void);
 	int getChannelCounter(void);
 
+	// Mode check methods
+	bool isInviteOnly(void) const;
+	bool isTopicOps(void) const;
+	bool isKeyRequired(void) const;
+	bool isLimitSet(void) const;
+	int getChannelMaxUsers(void) const;
+
 	// Nested classes
 	class ERR_INVITEONLYCHAN : public std::exception{
-		
+
 	};
 };

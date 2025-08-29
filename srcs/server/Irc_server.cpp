@@ -534,29 +534,30 @@ void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
 								_channels[cleanChannelName]->setLimit(*user, limit);
 							}
 							else {
-								// correct error message
+								//:server 461 <nick> MODE :Not enough parameters
+								std::string reply = ":jarvis_server 461 " + user->getNickname() + " MODE " + " :Not enough parameters" + "\r\n";
+								user->sendMessage( reply );
+								return ;
 							}
 						}
 						else if (modeType[i] == 'l' && sign == '-'){
-							//_channels[cleanChannelName]->removeLimit(*user);//todo
+							_channels[cleanChannelName]->removeLimit(*user);
 						}
 						else if (modeType[i] == 'k' && sign == '+'){
 							if (ircMessage.getParams().size() > 2 &&  !ircMessage.getParams()[2].empty()) {
 								std::string key = ircMessage.getParams()[2];
 								_channels[cleanChannelName]->setKey(*user, key);
+								std::cout << "***************************\n";
 							}
 							else {
-								//corrrect error message
+								//:server 461 <nick> MODE :Not enough parameters
+								std::string reply = ":jarvis_server 461 " + user->getNickname() + " MODE " + " :Not enough parameters" + "\r\n";
+								user->sendMessage( reply );
+								return ;
 							}
 						}
 						else if (modeType[i] == 'k' && sign == '-'){
-							if (ircMessage.getParams().size() > 2 &&  !ircMessage.getParams()[2].empty()) {
-								std::string key = ircMessage.getParams()[2];
-								_channels[cleanChannelName]->removeKey(*user, key);
-							}
-							else {
-								//corrrect error message
-							}
+								_channels[cleanChannelName]->removeKey(*user);
 						}
 						else if (modeType[i] == 'o' && sign == '+'){
 							if (ircMessage.getParams().size() > 2 &&  !ircMessage.getParams()[2].empty()) {

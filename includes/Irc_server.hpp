@@ -244,14 +244,14 @@ public:
 			_channels[channelName]->setKey(user, param);
 		}
 		else if (mode == "-k"){
-			_channels[channelName]->removeKey(user, param);
+			_channels[channelName]->removeKey(user);
 
 		}
 		else if (mode == "+l"){
 			_channels[channelName]->setLimit(user, param);
 		}
 		else if (mode == "-l"){
-			_channels[channelName]->removeLimit(user, param);
+			_channels[channelName]->removeLimit(user);
 
 		}
 		else if (mode == "+o"){
@@ -307,6 +307,36 @@ void infoCmd(User &user, const std::string &channelName = "") {
     info << ":jarvis_server INFO :Topic: " << (chan->ifTopic() ? chan->getChannelTopic() : "No topic set") << "\r\n";
     info << ":jarvis_server INFO :User count: " << chan->getChannelCounter() << "\r\n";
     info << ":jarvis_server INFO :Users: " << chan->usersNames() << "\r\n";
+
+    // Channel modes and properties
+    std::string modes = "";
+    if (chan->isInviteOnly()) modes += "i";
+    if (chan->isTopicOps()) modes += "t";
+    if (chan->isKeyRequired()) modes += "k";
+    if (chan->isLimitSet()) modes += "l";
+
+    info << ":jarvis_server INFO :Modes: " << (modes.empty() ? "none" : "+" + modes) << "\r\n";
+
+    // Channel key/password
+    if (chan->isKeyRequired()) {
+        info << ":jarvis_server INFO :Password: " << chan->getChannelKey() << "\r\n";
+    } else {
+        info << ":jarvis_server INFO :Password: none\r\n";
+    }
+
+    // Channel limit
+    if (chan->isLimitSet()) {
+        info << ":jarvis_server INFO :User limit: " << chan->getChannelMaxUsers() << "\r\n";
+    } else {
+        info << ":jarvis_server INFO :User limit: none\r\n";
+    }
+
+    // Invite-only status
+    info << ":jarvis_server INFO :Invite-only: " << (chan->isInviteOnly() ? "yes" : "no") << "\r\n";
+
+    // Topic protection
+    info << ":jarvis_server INFO :Topic protection: " << (chan->isTopicOps() ? "operators only" : "anyone") << "\r\n";
+
     user.sendMessage(info.str());
 }
 

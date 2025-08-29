@@ -3,6 +3,7 @@
 #include <cstdlib> // for atoi
 #include <iostream> // for debug prints
 
+
 // Constructors and Destructor
 Channel::Channel() {
 	_channelName = "";
@@ -301,6 +302,14 @@ void Channel::removeTopicOps(User &user) {
 
 void Channel::setKey(User &user, std::string key) {
 	if (!isOperator(user.getNickname())) {
+		std::string reply = ":jarvis_server 482 " + user.getNickname() + " #" + this->getChannelName() + " :You're not channel operator" + "\r\n";
+		user.sendMessage( reply );
+		return;
+	}
+	if (_isKeyReq){
+		//:server 467 <nick> <channel> :Channel key already set
+		std::string reply = ":jarvis_server 467 " + user.getNickname() + " #" + this->getChannelName() + " :Channel key already set" + "\r\n";
+		user.sendMessage( reply );
 		return;
 	}
 	_channelKey = key;
@@ -309,31 +318,44 @@ void Channel::setKey(User &user, std::string key) {
 	broadcastMsg(user, msg);
 }
 
-void Channel::removeKey(User &user, std::string key) {
+void Channel::removeKey(User &user) {
 	if (!isOperator(user.getNickname())) {
+		std::string reply = ":jarvis_server 482 " + user.getNickname() + " #" + this->getChannelName() + " :You're not channel operator" + "\r\n";
+		user.sendMessage( reply );
 		return;
 	}
-	if (_channelKey == key) {
 		_channelKey.clear();
 		_isKeyReq = false;
-		std::string msg = user.getPrefix() + " MODE #" + _channelName + " -k " + key + "\r\n";
+		std::string msg = user.getPrefix() + " MODE #" + _channelName + " -k " + "\r\n";
 		broadcastMsg(user, msg);
-	}
 }
 
 void Channel::setLimit(User &user, std::string limit) {
 	if (!isOperator(user.getNickname())) {
+		std::string reply = ":jarvis_server 482 " + user.getNickname() + " #" + this->getChannelName() + " :You're not channel operator" + "\r\n";
+		user.sendMessage( reply );
 		return;
 	}
-	_channelMaxUsers = atoi(limit.c_str());
+	//check limit is correct integer positive
+	_channelMaxUsers = parsePositiveInteger(limit);
+	if (_channelMaxUsers == 0){
+		//:server 472 <nick> <channel> :is unknown mode char to me
+		std::string reply = ":jarvis_server 472 " + user.getNickname() + " #" + this->getChannelName() + " :is unknown mode char to me" + "\r\n";
+		user.sendMessage( reply );
+		return ;
+	}
+
+	// _channelMaxUsers = atoi(limit.c_str());
 	_isLimitSet = true;
 	std::string msg = user.getPrefix() + " MODE #" + _channelName + " +l " + limit + "\r\n";
 	broadcastMsg(user, msg);
 }
 
-void Channel::removeLimit(User &user, std::string limit) {
-	(void)limit; // Suppress unused parameter warning
+void Channel::removeLimit(User &user) {
+	// (void)limit; // Suppress unused parameter warning
 	if (!isOperator(user.getNickname())) {
+		std::string reply = ":jarvis_server 482 " + user.getNickname() + " #" + this->getChannelName() + " :You're not channel operator" + "\r\n";
+		user.sendMessage( reply );
 		return;
 	}
 	_isLimitSet = false;
@@ -433,3 +455,45 @@ int Channel::getChannelCounter(void) {
 
 	return result;
 }
+
+// Mode check methods
+bool Channel::isInviteOnly(void) const {
+	return _isInviteOnly;
+}
+
+bool Channel::isTopicOps(void) const {
+	return _isTopicOpera;
+}
+
+bool Channel::isKeyRequired(void) const {
+	return _isKeyReq;
+}
+
+bool Channel::isLimitSet(void) const {
+	return _isLimitSet;
+}
+
+int Channel::getChannelMaxUsers(void) const {
+	return _channelMaxUsers;
+}
+
+
+
+// int parsePositiveInteger(const std::string& s) {
+//     if (s.empty()) return 0;
+
+//     char* endptr = 0;
+//     errno = 0;
+
+//     long val = std::strtol(s.c_str(), &endptr, 10);
+
+//     // Check if entire string was parsed
+//     if (*endptr != '\0') return 0;
+
+//     // Check for range errors and positivity
+//     if ((errno == ERANGE && (val == LONG_MAX || val == LONG_MIN)) || val > INT_MAX || val < 1) {
+//         return 0;
+//     }
+
+//     return static_cast<int>(val);
+// }
