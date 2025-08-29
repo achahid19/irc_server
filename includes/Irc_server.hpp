@@ -98,27 +98,27 @@ public:
 		// Create new channel if it doesn't exist
 		if (!isChannelExist(cleanChannelName)) {
 			_channels[cleanChannelName] = new Channel(cleanChannelName, user, key);
-			
+
 			// Send JOIN message to user
 			user.sendMessage(user.getPrefix() + " JOIN " + channelName + "\r\n");
-			
+
 			// Send topic information
 			if (_channels[cleanChannelName]->ifTopic()) {
 				user.sendMessage(":jarvis_server 332 " + user.getNickname() + " " + channelName + " :" + _channels[cleanChannelName]->getChannelTopic() + "\r\n");
 			} else {
 				user.sendMessage(":jarvis_server 331 " + user.getNickname() + " " + channelName + " :No topic is set\r\n");
 			}
-			
+
 			// Send names list
 			user.sendMessage(":jarvis_server 353 " + user.getNickname() + " = " + channelName + " :" + _channels[cleanChannelName]->usersNames() + "\r\n");
 			user.sendMessage(":jarvis_server 366 " + user.getNickname() + " " + channelName + " :End of /NAMES list\r\n");
-			
+
 			return;
 		}
 
 		// Try to add user to existing channel
 		int errCode = _channels[cleanChannelName]->addUser(user, key);
-		
+
 		// Handle different error codes
 		if (errCode == 473) {
 			user.sendMessage(":jarvis_server 473 " + user.getNickname() + " " + channelName + " :Cannot join channel (+i)\r\n");
@@ -143,18 +143,18 @@ public:
 
 		// Successfully joined - send JOIN message to user
 		user.sendMessage(user.getPrefix() + " JOIN " + channelName + "\r\n");
-		
+
 		// Broadcast JOIN message to channel
 		std::string joinMsg = user.getPrefix() + " JOIN " + channelName + "\r\n";
 		_channels[cleanChannelName]->broadcastMsg(user, joinMsg);
-		
+
 		// Send topic information
 		if (_channels[cleanChannelName]->ifTopic()) {
 			user.sendMessage(":jarvis_server 332 " + user.getNickname() + " " + channelName + " :" + _channels[cleanChannelName]->getChannelTopic() + "\r\n");
 		} else {
 			user.sendMessage(":jarvis_server 331 " + user.getNickname() + " " + channelName + " :No topic is set\r\n");
 		}
-		
+
 		// Send names list
 		user.sendMessage(":jarvis_server 353 " + user.getNickname() + " = " + channelName + " :" + _channels[cleanChannelName]->usersNames() + "\r\n");
 		user.sendMessage(":jarvis_server 366 " + user.getNickname() + " " + channelName + " :End of /NAMES list\r\n");
@@ -166,19 +166,19 @@ public:
 			user.sendMessage(":jarvis_server 403 " + user.getNickname() + " " + channelName + " :No such channel\r\n");
 			return ;
 		}
-		
+
 		// Remove # from channel name for internal storage
 		std::string cleanChannelName = channelName;
 		if (channelName[0] == '#') {
 			cleanChannelName = channelName.substr(1);
 		}
-		
+
 		// Check if user is in the channel
 		if (!_channels[cleanChannelName]->isUserInChannel(user.getNickname())) {
 			user.sendMessage(":jarvis_server 442 " + user.getNickname() + " " + channelName + " :You're not on that channel\r\n");
 			return;
 		}
-		
+
 		// Broadcast PART message to channel before removing user
 		std::string partMsg = user.getPrefix() + " PART " + channelName;
 		if (!reason.empty()) {
@@ -186,10 +186,10 @@ public:
 		}
 		partMsg += "\r\n";
 		_channels[cleanChannelName]->broadcastMsg(user, partMsg);
-		
+
 		// Remove user from channel
 		_channels[cleanChannelName]->removeUser(user);
-		
+
 		// Check if channel is empty and remove it
 		if (_channels[cleanChannelName]->getChannelCounter() == 0){
 			delete _channels[cleanChannelName];
@@ -235,18 +235,18 @@ public:
 		}
 		else if (mode == "+t"){
 			_channels[channelName]->setTopicOps(user);
-		}	
+		}
 		else if (mode == "-t"){
 			_channels[channelName]->removeTopicOps(user);
 
-		}	
+		}
 		else if (mode == "+k"){
 			_channels[channelName]->setKey(user, param);
-		}	
+		}
 		else if (mode == "-k"){
 			_channels[channelName]->removeKey(user, param);
 
-		}	
+		}
 		else if (mode == "+l"){
 			_channels[channelName]->setLimit(user, param);
 		}
@@ -256,7 +256,7 @@ public:
 		}
 		else if (mode == "+o"){
 			_channels[channelName]->setOps(user, param);
-		}	
+		}
 		else if (mode == "-o"){
 			_channels[channelName]->removeOps(user, param);
 
@@ -271,7 +271,7 @@ public:
 	// 		// 403 ERR_NOSUCHCHANNEL <channel> :No such channel
 	// 		return ;
 	// 	}
-		
+
 	// }
 
 	// ...existing code...
@@ -345,7 +345,7 @@ User	*findUser( std::string nick ){
 
 bool	isChannelExist( std::string channelName ){
 		bool result = _channels.find(channelName) != _channels.end();
-		
+
 		// Debug output
 		std::cout << "[DEBUG] isChannelExist(" << channelName << ") called" << std::endl;
 		std::cout << "[DEBUG] Result: " << (result ? "true" : "false") << std::endl;
@@ -354,7 +354,7 @@ bool	isChannelExist( std::string channelName ){
 			std::cout << it->first << " ";
 		}
 		std::cout << std::endl;
-		
+
 		return result;
 	}
 

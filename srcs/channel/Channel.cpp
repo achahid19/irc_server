@@ -57,12 +57,12 @@ std::string Channel::usersNames(void) {
 			names.append(it->first + " ");
 		}
 	}
-	
+
 	// Debug output
 	std::cout << "[DEBUG] usersNames() called for channel: " << _channelName << std::endl;
 	std::cout << "[DEBUG] Channel users map size: " << _channelUsers.size() << std::endl;
 	std::cout << "[DEBUG] Generated names: " << names << std::endl;
-	
+
 	return names;
 }
 
@@ -107,7 +107,7 @@ int Channel::addUser(User& newUser, std::string key) {
 	if (_channelUserCounter >= _channelMaxUsers && _isLimitSet) {
 		_isfull = true;
 	}
-	
+
 	// Debug output
 	std::cout << "[DEBUG] User " << newUser.getNickname() << " added to channel " << _channelName << std::endl;
 	std::cout << "[DEBUG] Channel now has " << _channelUserCounter << " users" << std::endl;
@@ -123,7 +123,7 @@ void Channel::removeUser(User &user) {
 	_channelUsers.erase(user.getNickname());
 	_channelOperators.erase(user.getNickname());
 	_channelUserCounter--;
-	
+
 	// Debug output
 	std::cout << "[DEBUG] User " << user.getNickname() << " removed from channel " << _channelName << std::endl;
 	std::cout << "[DEBUG] Channel now has " << _channelUserCounter << " users" << std::endl;
@@ -144,7 +144,7 @@ void Channel::pingUser(User &user, std::string message) {
 // Channel checks
 bool Channel::isUserInChannel(std::string nickname) {
 	bool result = _channelUsers.find(nickname) != _channelUsers.end();
-	
+
 	// Debug output
 	std::cout << "[DEBUG] isUserInChannel(" << nickname << ") called for channel: " << _channelName << std::endl;
 	std::cout << "[DEBUG] Result: " << (result ? "true" : "false") << std::endl;
@@ -153,23 +153,23 @@ bool Channel::isUserInChannel(std::string nickname) {
 		std::cout << it->first << " ";
 	}
 	std::cout << std::endl;
-	
+
 	return result;
 }
 
 bool Channel::isUserBanned(std::string user) {
 	bool result = _channelBannedUsers.find(user) != _channelBannedUsers.end();
-	
+
 	// Debug output
 	std::cout << "[DEBUG] isUserBanned(" << user << ") called for channel: " << _channelName << std::endl;
 	std::cout << "[DEBUG] Result: " << (result ? "true" : "false") << std::endl;
-	
+
 	return result;
 }
 
 bool Channel::isOperator(std::string user) {
 	bool result = _channelOperators.find(user) != _channelOperators.end();
-	
+
 	// Debug output
 	std::cout << "[DEBUG] isOperator(" << user << ") called for channel: " << _channelName << std::endl;
 	std::cout << "[DEBUG] Result: " << (result ? "true" : "false") << std::endl;
@@ -178,17 +178,17 @@ bool Channel::isOperator(std::string user) {
 		std::cout << *it << " ";
 	}
 	std::cout << std::endl;
-	
+
 	return result;
 }
 
 bool Channel::ifTopic(void) {
 	bool result = this->_isTopicSet;
-	
+
 	// Debug output
 	std::cout << "[DEBUG] ifTopic() called for channel: " << _channelName << std::endl;
 	std::cout << "[DEBUG] Result: " << (result ? "true" : "false") << std::endl;
-	
+
 	return result;
 }
 
@@ -201,7 +201,7 @@ void Channel::broadcastMsg(User& sender, std::string message) {
     for (std::map<std::string, User*>::iterator it = _channelUsers.begin(); it != _channelUsers.end(); ++it)
         std::cout << it->first << " ";
     std::cout << std::endl;
-    
+
     int messagesSent = 0;
 	for (std::map<std::string, User*>::iterator it = _channelUsers.begin(); it != _channelUsers.end(); it++) {
 		if (it->first != sender.getNickname()) {
@@ -224,8 +224,10 @@ void Channel::setChannelTopic(User &user, std::string newTopic) {
 		return;
 	}
 	if (isOperator(user.getNickname()) == false && this->_isTopicOpera == true) {
+		std::string reply = ":jarvis_server 442 " + user.getNickname() + " #" + this->getChannelName() + " ::You're not channel operator" + "\r\n";
+		user.sendMessage( reply );
 		return;
-	}
+}
 	_channelTopic = newTopic;
 	_isTopicSet = true;
 	// topic successfully changed broadcast
@@ -255,6 +257,8 @@ void Channel::viewTopic(User &user) {
 // Channel modes
 void Channel::setInviteOnly(User &user) {
 	if (!isOperator(user.getNickname())) {
+		std::string reply = ":jarvis_server 482 " + user.getNickname() + " #" + this->getChannelName() + " :You're not channel operator" + "\r\n";
+		user.sendMessage( reply );
 		return;
 	}
 	_isInviteOnly = true;
@@ -264,6 +268,8 @@ void Channel::setInviteOnly(User &user) {
 
 void Channel::removeInviteOnly(User &user) {
 	if (!isOperator(user.getNickname())) {
+		std::string reply = ":jarvis_server 482 " + user.getNickname() + " #" + this->getChannelName() + " :You're not channel operator" + "\r\n";
+		user.sendMessage( reply );
 		return;
 	}
 	_isInviteOnly = false;
@@ -273,6 +279,8 @@ void Channel::removeInviteOnly(User &user) {
 
 void Channel::setTopicOps(User &user) {
 	if (!isOperator(user.getNickname())) {
+		std::string reply = ":jarvis_server 482 " + user.getNickname() + " #" + this->getChannelName() + " :You're not channel operator" + "\r\n";
+		user.sendMessage( reply );
 		return;
 	}
 	_isTopicOpera = true;
@@ -282,6 +290,8 @@ void Channel::setTopicOps(User &user) {
 
 void Channel::removeTopicOps(User &user) {
 	if (!isOperator(user.getNickname())) {
+		std::string reply = ":jarvis_server 482 " + user.getNickname() + " #" + this->getChannelName() + " :You're not channel operator" + "\r\n";
+		user.sendMessage( reply );
 		return;
 	}
 	_isTopicOpera = false;
@@ -376,50 +386,50 @@ void Channel::kickUser(User &user, std::string badUser) {
 // Getters
 std::string Channel::getChannelName(void) {
 	std::string result = this->_channelName;
-	
+
 	// Debug output
 	std::cout << "[DEBUG] getChannelName() called for channel: " << _channelName << std::endl;
 	std::cout << "[DEBUG] Result: " << result << std::endl;
-	
+
 	return result;
 }
 
 std::string Channel::getChannelTopic(void) {
 	std::string result = this->_channelTopic;
-	
+
 	// Debug output
 	std::cout << "[DEBUG] getChannelTopic() called for channel: " << _channelName << std::endl;
 	std::cout << "[DEBUG] Result: " << result << std::endl;
-	
+
 	return result;
 }
 
 std::string Channel::getChannelMode(void) {
 	std::string result = this->_channelMode;
-	
+
 	// Debug output
 	std::cout << "[DEBUG] getChannelMode() called for channel: " << _channelName << std::endl;
 	std::cout << "[DEBUG] Result: " << result << std::endl;
-	
+
 	return result;
 }
 
 std::string Channel::getChannelKey(void) {
 	std::string result = this->_channelKey;
-	
+
 	// Debug output
 	std::cout << "[DEBUG] getChannelKey() called for channel: " << _channelName << std::endl;
 	std::cout << "[DEBUG] Result: " << result << std::endl;
-	
+
 	return result;
 }
 
 int Channel::getChannelCounter(void) {
 	int result = this->_channelUserCounter;
-	
+
 	// Debug output
 	std::cout << "[DEBUG] getChannelCounter() called for channel: " << _channelName << std::endl;
 	std::cout << "[DEBUG] Result: " << result << std::endl;
-	
+
 	return result;
 }

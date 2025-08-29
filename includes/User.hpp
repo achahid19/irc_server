@@ -65,7 +65,7 @@ public:
 	//CHA
 	void sendMessage( std::string message ){
 		std::cout << "[DEBUG] sendMessage called for user: " << getNickname() << std::endl;
-		std::cout << "[DEBUG] Message: " << message << std::endl;
+		std::cout << "\033[32m" << "[DEBUG] Message: " << message << "\033[32m" << std::endl;
 		ssize_t sent = send(_sock, message.c_str(), message.length(), 0);
 		std::cout << "[DEBUG] send() returned: " << sent << " for user: " << getNickname() << std::endl;
 		if (sent == -1) perror("send");
@@ -73,12 +73,12 @@ public:
 	std::string getPrefix() const {
 		std::string nickname = this->getNickname();
 		std::string username = this->getUsername();
-		
+
 		// Check if nickname and username are set
 		if (nickname.empty() || username.empty()) {
 			return ":unknown!unknown@localhost";
 		}
-		
+
 		return ":" + nickname + "!" + username + "@localhost";
 	}
 

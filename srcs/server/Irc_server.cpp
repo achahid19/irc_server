@@ -43,7 +43,7 @@ IrcServer::IrcServer( int port, std::string const password )
 	this->_epollCreate();
 	this->_connectionsCount = 0;
 	//BONUS create bot
-	this->_connections.
+
 }
 
 /**
@@ -331,6 +331,23 @@ void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
 		std::string command = ircMessage.getCommand();
 		::printMsg("Processing command: " + command, INFO_LOGS, COLOR_BLUE);
 
+		// Log the parsed IRC message content for every command
+		{
+			std::string paramsStr;
+			const std::vector<std::string> &params = ircMessage.getParams();
+			for (std::vector<std::string>::const_iterator it = params.begin(); it != params.end(); ++it) {
+				paramsStr += (it == params.begin() ? "" : ", ") + *it;
+			}
+			std::string trailingStr = ircMessage.getTrailing();
+			::printMsg(
+				std::string("IRCMessage => CMD: ") + command +
+				"\n\t\t\t | PARAMS: [" + paramsStr + "]" +
+				"\n\t\t\t | TRAILING: '" + trailingStr + "'",
+				INFO_LOGS,
+				COLOR_BLUE
+			);
+		}
+
 		if (command == "QUIT") {
 			*bytes_read = 0; // Close connection - cleanup will be handled in _eventsLoop
 		}
@@ -350,7 +367,7 @@ void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
 			}
 		}
 		else if (command == "PART"){
-			
+
 			std::string channelName = ircMessage.getParams()[0];
 			std::string reason = (ircMessage.getParams().size() > 1) ? ircMessage.getParams()[1] : "";
 			partCmd(*user, channelName.substr(1), reason);
@@ -382,23 +399,23 @@ void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
 			std::cout << "[DEBUG] PRIVMSG target: '" << target << "'" << std::endl;
 			std::cout << "[DEBUG] PRIVMSG message: '" << msg << "'" << std::endl;
 			std::cout << "[DEBUG] Params size: " << ircMessage.getParams().size() << std::endl;
-			
+
 			// If no trailing, try to get from params
 			if (msg.empty() && ircMessage.getParams().size() > 1) {
 				msg = ircMessage.getParams()[1];
 				std::cout << "[DEBUG] Using param[1]: '" << msg << "'" << std::endl;
 			}
-					
+
 				// If no trailing, try to get from params (fallback for simple messages)
 				if (msg.empty() && ircMessage.getParams().size() > 1) {
 					msg = ircMessage.getParams()[1];
 				}
-				
+
 				if (msg.empty()) {
 					user->sendMessage(":jarvis_server 412 " + user->getNickname() + " :No text to send\r\n");
 					return;
 				}
-				
+
 				if (target[0] == '#') {
 					std::string cleanChannelName = target.substr(1);
 					if (isChannelExist(cleanChannelName)) {
@@ -407,7 +424,7 @@ void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
 							user->sendMessage(":jarvis_server 404 " + user->getNickname() + " " + target + " :Cannot send to channel\r\n");
 							return;
 						}
-						
+
 						std::string formattedMsg = user->getPrefix() + " PRIVMSG " + target + " :" + msg + "\r\n";
 						_channels[cleanChannelName]->broadcastMsg(*user, formattedMsg);
 					} else {
@@ -416,7 +433,7 @@ void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
 				} else {
 					// handle private message to user
 					// TODO: Implement private messaging between users
-					// check if user regersted bason nick 
+					// check if user regersted bason nick
 					User* reciever = findUser( target );
 					if (reciever != 0){
 						std::cout << "tar: " << target << std::endl;
@@ -446,9 +463,14 @@ void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
 				std::string channelname = ircMessage.getParams()[0];
 				if (channelname[0] != '#') return;
 				std::string cleanChannelName = channelname.substr(1);
-				if (!isChannelExist(cleanChannelName)) return;
+				if (!isChannelExist(cleanChannelName)) {
+					//:irc.localhost 403 alice #somechan :No such channel
+					std::string reply = ":jarvis_server 403 " + user->getNickname() + " #" + cleanChannelName + " :No such channel" + "\r\n";
+					user->sendMessage( reply );
+					return;
+				}
 				if (ircMessage.getTrailing().empty()){
-					// return topic 
+					// return topic
 					std::string reply = ":jarvis_server 332 " + user->getNickname() + " #" + cleanChannelName + " :" + _channels[cleanChannelName]->getChannelTopic() + "\r\n";
 					user->sendMessage( reply );
 					return ;
@@ -456,7 +478,7 @@ void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
 				_channels[cleanChannelName]->setChannelTopic(*user, ircMessage.getTrailing());
 				std::string reply = ":jarvis_server 332 " + user->getNickname() + " #" + cleanChannelName + " :" + _channels[cleanChannelName]->getChannelTopic() + "\r\n";
 				user->sendMessage( reply );
-				
+
 			}
 		}
 
@@ -469,11 +491,104 @@ void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
 			}
 		}
 
+		//MODE <channel> {[+|-]modes} [parameters...]
+		else if (command == "MODE"){
+			if (ircMessage.getParams().size() > 1){
+				//check channel is exicst
+				std::string channelname = ircMessage.getParams()[0];
+				if (channelname[0] != '#') return;
+				std::string cleanChannelName = channelname.substr(1);
+				if (!isChannelExist(cleanChannelName))
+				{
+					//:irc.localhost 403 alice #somechan :No such channel
+					std::string reply = ":jarvis_server 403 " + user->getNickname() + " #" + cleanChannelName + " :No such channel" + "\r\n";
+					user->sendMessage( reply );
+					return;
+				}
+				if (!_channels[cleanChannelName]->isUserInChannel(user->getNickname())) {
+					//:irc.localhost 442 alice #somechan :You're not on that channel
+					std::string reply = ":jarvis_server 442 " + user->getNickname() + " #" + cleanChannelName + " :You're not on that channel" + "\r\n";
+					user->sendMessage( reply );
+					return;
+				}
+				//check if the flages are only the allowd alphabitic ilkot   - +locgic start @params[1]
+				std::string modeType = ircMessage.getParams()[1];
+				if (modeType.size() > 1){
+					char sign = modeType[0];
+					for (size_t i = 1; i < modeType.size(); i++){
+							 if (modeType[i] == 'i' && sign == '+'){
+							_channels[cleanChannelName]->setInviteOnly(*user);
+						}
+						else if (modeType[i] == 'i' && sign == '-'){
+							_channels[cleanChannelName]->removeInviteOnly(*user);
+						}
+						else if (modeType[i] == 't' && sign == '+'){
+							_channels[cleanChannelName]->setTopicOps(*user);
+						}
+						else if (modeType[i] == 't' && sign == '-'){
+							_channels[cleanChannelName]->removeTopicOps(*user);
+						}
+						else if (modeType[i] == 'l' && sign == '+'){
+							if (ircMessage.getParams().size() > 2 &&  !ircMessage.getParams()[2].empty()) {
+								std::string limit = ircMessage.getParams()[2];
+								_channels[cleanChannelName]->setLimit(*user, limit);
+							}
+							else {
+								// correct error message
+							}
+						}
+						else if (modeType[i] == 'l' && sign == '-'){
+							//_channels[cleanChannelName]->removeLimit(*user);//todo
+						}
+						else if (modeType[i] == 'k' && sign == '+'){
+							if (ircMessage.getParams().size() > 2 &&  !ircMessage.getParams()[2].empty()) {
+								std::string key = ircMessage.getParams()[2];
+								_channels[cleanChannelName]->setKey(*user, key);
+							}
+							else {
+								//corrrect error message
+							}
+						}
+						else if (modeType[i] == 'k' && sign == '-'){
+							if (ircMessage.getParams().size() > 2 &&  !ircMessage.getParams()[2].empty()) {
+								std::string key = ircMessage.getParams()[2];
+								_channels[cleanChannelName]->removeKey(*user, key);
+							}
+							else {
+								//corrrect error message
+							}
+						}
+						else if (modeType[i] == 'o' && sign == '+'){
+							if (ircMessage.getParams().size() > 2 &&  !ircMessage.getParams()[2].empty()) {
+								std::string opNick = ircMessage.getParams()[2];
+								_channels[cleanChannelName]->isUserInChannel(opNick) ? _channels[cleanChannelName]->setOps(*user, opNick) : printErr("user not here");
+							}
+							else {
+								//corrrect error message
+							}
+						}
+						else if (modeType[i] == 'o' && sign == '-'){
+							if (ircMessage.getParams().size() > 2 &&  !ircMessage.getParams()[2].empty()) {
+								std::string opNick = ircMessage.getParams()[2];
+								_channels[cleanChannelName]->isUserInChannel(opNick) ? _channels[cleanChannelName]->removeOps(*user, opNick) : printErr("user not here");
+							}
+							else {
+								//corrrect error message
+							}
+						}
+
+					}
+				}
+			}
+		}
+
 		else {
 			::printMsg("Command not implemented yet: " + command, INFO_LOGS, COLOR_YELLOW);
 		}
 	}
 }
+
+
 
 // exception server errors handling classes.
 
