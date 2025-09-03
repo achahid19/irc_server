@@ -95,7 +95,7 @@ void	IrcServer::_CreateBindListeningSocket( void ) {
 	struct sockaddr_in serverAddr;
 
 	serverAddr.sin_family = AF_INET;
-	serverAddr.sin_addr.s_addr = inet_addr("10.11.1.1");
+	serverAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
 	serverAddr.sin_port = htons(this->_port);
 
 	int opt = 1;
