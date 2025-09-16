@@ -116,6 +116,15 @@ public:
 			return;
 		}
 
+		// if channel is sitted on inivete mode and the user nick name is on the invited list
+		// chane is inviet channel and the usern not invited
+		if (_channels[cleanChannelName]->isInviteOnly() && !_channels[cleanChannelName]->isInList(user.getNickname())){
+			std::cout << " !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1 " << std::endl;
+			user.sendMessage(":jarvis_server 473 " + user.getNickname() + " " + channelName + " :Cannot join channel (+i)\r\n");
+			return ;
+		}
+
+
 		// Try to add user to existing channel
 		int errCode = _channels[cleanChannelName]->addUser(user, key);
 
@@ -336,6 +345,15 @@ void infoCmd(User &user, const std::string &channelName = "") {
 
     // Topic protection
     info << ":jarvis_server INFO :Topic protection: " << (chan->isTopicOps() ? "operators only" : "anyone") << "\r\n";
+
+	// is channelfull
+    info << ":jarvis_server INFO :IS FULL : " << (chan->isfull() ? "yes" : "no") << "\r\n";
+
+	// invited users
+
+	info << ":invited users:" <<  chan->WhoIsInvite() << "\r\n";
+
+
 
     user.sendMessage(info.str());
 }

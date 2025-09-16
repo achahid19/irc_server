@@ -74,12 +74,9 @@ int Channel::addUser(User& newUser, std::string key) {
 		return 0;
 	}
 
-	// Check invite-only mode
-	if (_isInviteOnly) {
-		// User not invited to +i channel
+	// Check invite-only mode: must be in invite list if +i
+	if (_isInviteOnly && _inviteList.find(newUser.getNickname()) == _inviteList.end()) {
 		return 473; // ERR_INVITEONLYCHAN
-		// newUser.sendMessage();
-		// return;
 	}
 
 	// Check if user is banned
@@ -104,8 +101,13 @@ int Channel::addUser(User& newUser, std::string key) {
 	_channelUsers[newUser.getNickname()] = &newUser;
 	_channelUserCounter++;
 
+	// If invite-only, consume the invite for this user
+	if (_isInviteOnly) {
+		_inviteList.erase(newUser.getNickname());
+	}
+
 	// Update full status if limit is set
-	if (_channelUserCounter >= _channelMaxUsers && _isLimitSet) {
+	if (_channelUserCounter > _channelMaxUsers && _isLimitSet) {
 		_isfull = true;
 	}
 
@@ -349,6 +351,11 @@ void Channel::setLimit(User &user, std::string limit) {
 	_isLimitSet = true;
 	std::string msg = user.getPrefix() + " MODE #" + _channelName + " +l " + limit + "\r\n";
 	broadcastMsg(user, msg);
+	std::cout << "big check >>>>: " << this->_channelMaxUsers << std::endl;
+	std::cout << "is full >>>> ";
+	this->isfull() ? std::cout << "yes\n" : std::cout << "no\n";
+	std::cout << "is limit >>>> ";
+	this->isLimitSet() ? std::cout << "yes\n" : std::cout << "no\n";
 }
 
 void Channel::removeLimit(User &user) {
@@ -359,9 +366,17 @@ void Channel::removeLimit(User &user) {
 		return;
 	}
 	_isLimitSet = false;
+	_isfull = false;
 	_channelMaxUsers = 0;
 	std::string msg = user.getPrefix() + " MODE #" + _channelName + " -l\r\n";
 	broadcastMsg(user, msg);
+	std::cout << "big check >>>>: " << this->_channelMaxUsers << std::endl;
+	std::cout << "is full >>>> ";
+	this->isfull() ? std::cout << "yes\n" : std::cout << "no\n";
+	std::cout << "is limit >>>> ";
+	this->isLimitSet() ? std::cout << "yes\n" : std::cout << "no\n";
+
+
 }
 
 void Channel::setOps(User &user, std::string targetUser) {
@@ -477,7 +492,27 @@ int Channel::getChannelMaxUsers(void) const {
 	return _channelMaxUsers;
 }
 
+bool Channel::isfull(void) const {
+	return _isfull;
+}
 
+
+void	Channel::inviteUser(User& user, std::string invitedUser){
+	// check operator permissions
+	if (!isOperator(user.getNickname())) {
+		std::string reply = ":jarvis_server 482 " + user.getNickname() + " #" + this->getChannelName() + " :You're not channel operator" + "\r\n";
+		user.sendMessage( reply );
+		return;
+	}
+	// add to invite list if not already present
+	if (_inviteList.find(invitedUser) == _inviteList.end()) {
+		_inviteList.insert(invitedUser);
+	}
+}
+
+bool 	Channel::isInList( std::string nick ){
+	return (_inviteList.find(nick) != _inviteList.end());
+}
 
 // int parsePositiveInteger(const std::string& s) {
 //     if (s.empty()) return 0;
@@ -497,3 +532,13 @@ int Channel::getChannelMaxUsers(void) const {
 
 //     return static_cast<int>(val);
 // }
+
+std::string Channel::WhoIsInvite(void) const{
+	std::string r;
+	for (std::set<std::string>::const_iterator iter = _inviteList.begin(); iter != _inviteList.end(); iter++){
+		r.append(" ");
+		r.append(*iter);
+	}
+	return r;
+
+}

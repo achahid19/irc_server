@@ -27,8 +27,12 @@ private:
 	bool									_isTopicSet;
 	int										_channelUserCounter;
 	std::string								_channelUsersNames;
+	std::set<std::string>					_inviteList;
 
 public:
+	bool 	isInList( std::string nick );
+	void	inviteUser(User& user, std::string invitedUser);
+
 	// Constructors and Destructor
 	Channel(std::string channelName, User& opennerUser, std::string key);
 	Channel();
@@ -81,9 +85,7 @@ public:
 	bool isKeyRequired(void) const;
 	bool isLimitSet(void) const;
 	int getChannelMaxUsers(void) const;
+	bool isfull(void) const;
+	std::string WhoIsInvite(void) const;
 
-	// Nested classes
-	class ERR_INVITEONLYCHAN : public std::exception{
-
-	};
 };
