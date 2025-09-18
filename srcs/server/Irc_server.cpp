@@ -353,13 +353,9 @@ void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
 		}
 		else if (command == "JOIN") {
 			joinCommand(*user, ircMessage);
-			// if (ircMessage.getParams().size() > 0) {
-			// 	std::string channelName = ircMessage.getParams()[0];
-			// 	std::string key = (ircMessage.getParams().size() > 1) ? ircMessage.getParams()[1] : "";
-			// 	joinCmd(*user, channelName, key);
-			// } else {
-			// 	user->sendMessage(":jarvis_server 461 " + user->getNickname() + " JOIN :Not enough parameters\r\n");
-			// }
+		}
+		else if (command == "PART"){
+			partCmd(*user, ircMessage);
 		}
 		else if (command == "PING") {
 			if (ircMessage.getParams().size() > 0) {
@@ -367,18 +363,12 @@ void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
 				user->sendMessage(response);
 			}
 		}
-		else if (command == "PART"){
-
-			std::string channelName = ircMessage.getParams()[0];
-			std::string reason = (ircMessage.getParams().size() > 1) ? ircMessage.getParams()[1] : "";
-			partCmd(*user, channelName.substr(1), reason);
-		}
 		else if (command == "INFO") {
-    if (ircMessage.getParams().size() == 0) {
-        infoCmd(*user);
-    } else {
-        infoCmd(*user, ircMessage.getParams()[0]);
-    }
+			if (ircMessage.getParams().size() == 0) {
+				infoCmd(*user);
+			} else {
+				infoCmd(*user, ircMessage.getParams()[0]);
+			}
 }
 		else if (command == "USERS") {
     listUsersCmd(*user);
@@ -389,62 +379,7 @@ void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
 
 		}
 		else if (command == "PRIVMSG") {
-			if (ircMessage.getParams().size() > 0) {
-				std::string target = ircMessage.getParams()[0];
-				std::string msg = ircMessage.getTrailing();
-
-
-				// DEBUG: Add these lines
-			std::cout << "[DEBUG] PRIVMSG target: '" << target << "'" << std::endl;
-			std::cout << "[DEBUG] PRIVMSG message: '" << msg << "'" << std::endl;
-			std::cout << "[DEBUG] Params size: " << ircMessage.getParams().size() << std::endl;
-
-			// If no trailing, try to get from params
-			if (msg.empty() && ircMessage.getParams().size() > 1) {
-				msg = ircMessage.getParams()[1];
-				std::cout << "[DEBUG] Using param[1]: '" << msg << "'" << std::endl;
-			}
-
-				// If no trailing, try to get from params (fallback for simple messages)
-				if (msg.empty() && ircMessage.getParams().size() > 1) {
-					msg = ircMessage.getParams()[1];
-				}
-
-				if (msg.empty()) {
-					user->sendMessage(":jarvis_server 412 " + user->getNickname() + " :No text to send\r\n");
-					return;
-				}
-
-				if (target[0] == '#') {
-					std::string cleanChannelName = target.substr(1);
-					if (isChannelExist(cleanChannelName)) {
-						// Check if user is in the channel
-						if (!_channels[cleanChannelName]->isUserInChannel(user->getNickname())) {
-							user->sendMessage(":jarvis_server 404 " + user->getNickname() + " " + target + " :Cannot send to channel\r\n");
-							return;
-						}
-
-						std::string formattedMsg = user->getPrefix() + " PRIVMSG " + target + " :" + msg + "\r\n";
-						_channels[cleanChannelName]->broadcastMsg(*user, formattedMsg);
-					} else {
-						user->sendMessage(":jarvis_server 403 " + user->getNickname() + " " + target + " :No such channel\r\n");
-					}
-				} else {
-					// handle private message to user
-					// TODO: Implement private messaging between users
-					// check if user regersted bason nick
-					User* reciever = findUser( target );
-					if (reciever != 0){
-						std::cout << "tar: " << target << std::endl;
-						std::string formattedMsg = user->getPrefix() + " PRIVMSG " + target + " :" + msg + "\r\n";
-						reciever->sendMessage(formattedMsg);
-					}
-					else
-						user->sendMessage(":jarvis_server 401 " + user->getNickname() + " " + target + " :No such nick/channel\r\n");
-				}
-			} else {
-				user->sendMessage(":jarvis_server 411 " + user->getNickname() + " :No recipient given (PRIVMSG)\r\n");
-			}
+			privmsgCmd( *user, ircMessage );
 }
 		// else if (command == "msg"){
 		// 	if (ircMessage.getParams().size() > 0){
@@ -585,33 +520,7 @@ void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
 		}
 
 		else if (command == "KICK"){
-			if (ircMessage.getParams().size() > 1){
-				//check channel is exicst
-				std::string channelname = ircMessage.getParams()[0];
-				if (channelname[0] != '#') return;
-				std::string cleanChannelName = channelname.substr(1);
-				if (!isChannelExist(cleanChannelName))
-				{
-					//:irc.localhost 403 alice #somechan :No such channel
-					std::string reply = ":jarvis_server 403 " + user->getNickname() + " #" + cleanChannelName + " :No such channel" + "\r\n";
-					user->sendMessage( reply );
-					return;
-				}
-				if (!_channels[cleanChannelName]->isUserInChannel(user->getNickname())) {
-					//:irc.localhost 442 alice #somechan :You're not on that channel
-					std::string reply = ":jarvis_server 442 " + user->getNickname() + " #" + cleanChannelName + " :You're not on that channel" + "\r\n";
-					user->sendMessage( reply );
-					return;
-				}
-				std::string userNick = ircMessage.getParams()[1];
-				if (!_channels[cleanChannelName]->isUserInChannel(userNick)) {
-					// 441 <user> <target> <channel> :They aren't on that channel
-					std::string reply = ":jarvis_server 441 " + user->getNickname() + " " + userNick + " #" + cleanChannelName + " :They aren't on that channel" + "\r\n";
-					user->sendMessage( reply );
-					return;
-				}
-				_channels[cleanChannelName]->kickUser(*user, userNick);
-			}
+			kickCmd(*user, ircMessage);
 		}
 
 		else if (command == "INVITE"){
