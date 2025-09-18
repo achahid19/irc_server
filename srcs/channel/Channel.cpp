@@ -76,6 +76,7 @@ int Channel::addUser(User& newUser, std::string key) {
 
 	// Check invite-only mode: must be in invite list if +i
 	if (_isInviteOnly && _inviteList.find(newUser.getNickname()) == _inviteList.end()) {
+		std::cout << "buuuuuuuuuuuuuuuuuuuuuuuuuuuxxxxx\r\n";
 		return 473; // ERR_INVITEONLYCHAN
 	}
 

@@ -352,13 +352,14 @@ void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
 			*bytes_read = 0; // Close connection - cleanup will be handled in _eventsLoop
 		}
 		else if (command == "JOIN") {
-			if (ircMessage.getParams().size() > 0) {
-				std::string channelName = ircMessage.getParams()[0];
-				std::string key = (ircMessage.getParams().size() > 1) ? ircMessage.getParams()[1] : "";
-				joinCmd(*user, channelName, key);
-			} else {
-				user->sendMessage(":jarvis_server 461 " + user->getNickname() + " JOIN :Not enough parameters\r\n");
-			}
+			joinCommand(*user, ircMessage);
+			// if (ircMessage.getParams().size() > 0) {
+			// 	std::string channelName = ircMessage.getParams()[0];
+			// 	std::string key = (ircMessage.getParams().size() > 1) ? ircMessage.getParams()[1] : "";
+			// 	joinCmd(*user, channelName, key);
+			// } else {
+			// 	user->sendMessage(":jarvis_server 461 " + user->getNickname() + " JOIN :Not enough parameters\r\n");
+			// }
 		}
 		else if (command == "PING") {
 			if (ircMessage.getParams().size() > 0) {
@@ -614,35 +615,36 @@ void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
 		}
 
 		else if (command == "INVITE"){
-			if (ircMessage.getParams().size() > 1){
-				//check channel is exicst
-				std::string channelname = ircMessage.getParams()[1];
-				if (channelname[0] != '#') return;
-				std::string cleanChannelName = channelname.substr(1);
-				if (!isChannelExist(cleanChannelName))
-				{
-					//:irc.localhost 403 alice #somechan :No such channel
-					std::string reply = ":jarvis_server 403 " + user->getNickname() + " #" + cleanChannelName + " :No such channel" + "\r\n";
-					user->sendMessage( reply );
-					return;
-				}
-				if (!_channels[cleanChannelName]->isUserInChannel(user->getNickname())) {
-					//:irc.localhost 442 alice #somechan :You're not on that channel
-					std::string reply = ":jarvis_server 442 " + user->getNickname() + " #" + cleanChannelName + " :You're not on that channel" + "\r\n";
-					user->sendMessage( reply );
-					return;
-				}
-				std::string userNick = ircMessage.getParams()[0];
-				// add to invite list
-				_channels[cleanChannelName]->inviteUser(*user, userNick);
-				// notify inviter
-				user->sendMessage(":jarvis_server 341 " + user->getNickname() + " " + userNick + " #" + cleanChannelName + "\r\n");
-				// try to notify invitee if online
-				User *invitee = findUser(userNick);
-				if (invitee) {
-					invitee->sendMessage(user->getPrefix() + " INVITE " + userNick + " #" + cleanChannelName + "\r\n");
-				}
-			}
+			inviteCmd( *user, ircMessage);
+			// if (ircMessage.getParams().size() > 1){
+			// 	//check channel is exicst
+			// 	std::string channelname = ircMessage.getParams()[1];
+			// 	if (channelname[0] != '#') return;
+			// 	std::string cleanChannelName = channelname.substr(1);
+			// 	if (!isChannelExist(cleanChannelName))
+			// 	{
+			// 		//:irc.localhost 403 alice #somechan :No such channel
+			// 		std::string reply = ":jarvis_server 403 " + user->getNickname() + " #" + cleanChannelName + " :No such channel" + "\r\n";
+			// 		user->sendMessage( reply );
+			// 		return;
+			// 	}
+			// 	if (!_channels[cleanChannelName]->isUserInChannel(user->getNickname())) {
+			// 		//:irc.localhost 442 alice #somechan :You're not on that channel
+			// 		std::string reply = ":jarvis_server 442 " + user->getNickname() + " #" + cleanChannelName + " :You're not on that channel" + "\r\n";
+			// 		user->sendMessage( reply );
+			// 		return;
+			// 	}
+			// 	std::string userNick = ircMessage.getParams()[0];
+			// 	// add to invite list
+			// 	_channels[cleanChannelName]->inviteUser(*user, userNick);
+			// 	// notify inviter
+			// 	user->sendMessage(":jarvis_server 341 " + user->getNickname() + " " + userNick + " #" + cleanChannelName + "\r\n");
+			// 	// try to notify invitee if online
+			// 	User *invitee = findUser(userNick);
+			// 	if (invitee) {
+			// 		invitee->sendMessage(user->getPrefix() + " INVITE " + userNick + " #" + cleanChannelName + "\r\n");
+			// 	}
+			// }
 		}
 
 		else {
