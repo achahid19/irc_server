@@ -35,7 +35,7 @@ IrcServer::IrcServer( int port, std::string const password )
 	this->_CreateBindListeningSocket();
 	this->_listenSocket();
 	::printMsg(
-		"IrcServer Initialized on 10.11.1.1:" + ::to_string(this->_port),
+		"IrcServer Initialized on 0.0.0.0:" + ::to_string(this->_port),
 		INFO_LOGS,
 		COLOR_GRAY
 	);
@@ -95,7 +95,7 @@ void	IrcServer::_CreateBindListeningSocket( void ) {
 	struct sockaddr_in serverAddr;
 
 	serverAddr.sin_family = AF_INET;
-	serverAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
+	serverAddr.sin_addr.s_addr = inet_addr("0.0.0.0");
 	serverAddr.sin_port = htons(this->_port);
 
 	int opt = 1;
