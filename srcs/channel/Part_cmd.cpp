@@ -3,23 +3,34 @@
 void	IrcServer::partCmd( User &user, Irc_message &ircMessage ){
 
 	std::string channelName = ircMessage.getParams()[0];
+	if (channelName[0] != '#') return;
+	std::string cleanChannelName = channelName.substr(1);
 	std::string reason = (ircMessage.getParams().size() > 1) ? ircMessage.getParams()[1] : "";
 
-	if (isChannelExist(channelName) == false){
-		// 403 ERR_NOSUCHCHANNEL <channel> :No such channel
-		user.sendMessage(":jarvis_server 403 " + user.getNickname() + " " + channelName + " :No such channel\r\n");
-		return ;
+	if (!isChannelExist(cleanChannelName))
+	{
+		//:irc.localhost 403 alice #somechan :No such channel
+		std::string reply = ":jarvis_server 403 " + user.getNickname() + " #" + cleanChannelName + " :No such channel" + "\r\n";
+		user.sendMessage( reply );
+		return;
 	}
 
 	// Remove # from channel name for internal storage
-	std::string cleanChannelName = channelName;
-	if (channelName[0] == '#') {
-		cleanChannelName = channelName.substr(1);
-	}
+	// std::string cleanChannelName = channelName;
+	// if (channelName[0] == '#') {
+	// 	cleanChannelName = channelName.substr(1);
+	// }
 
 	// Check if user is in the channel
+	// if (!_channels[cleanChannelName]->isUserInChannel(user.getNickname())) {
+	// 	user.sendMessage(":jarvis_server 442 " + user.getNickname() + " " + channelName + " :You're not on that channel\r\n");
+	// 	return;
+	// }
+
 	if (!_channels[cleanChannelName]->isUserInChannel(user.getNickname())) {
-		user.sendMessage(":jarvis_server 442 " + user.getNickname() + " " + channelName + " :You're not on that channel\r\n");
+		//:irc.localhost 442 alice #somechan :You're not on that channel
+		std::string reply = ":jarvis_server 442 " + user.getNickname() + " #" + cleanChannelName + " :You're not on that channel" + "\r\n";
+		user.sendMessage( reply );
 		return;
 	}
 
