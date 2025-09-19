@@ -2,10 +2,11 @@
 #include "utils.hpp"
 #include "Irc_message.hpp"
 #include "User.hpp"
+#include "Channel.hpp"
 
 /**
  * TODO list -
- * 
+ *
  * make a destructor to close all sockets and free memory. DONE
  * add doc strings for all methods. IN PROGRESS
  * Handle NICK, USER change commands.
@@ -13,15 +14,15 @@
  */
 
 bool IrcServer::_running = true; // flag to control server running state, for ctrl+c handling
- 
+
 /**
  * IrcServer - IrcServer constructor
- * 
+ *
  * This method will set and initialize server data
- * 
+ *
  * @param port: the port number on which the irc server runs on
  * @param password: the password used by client's to access this server
- * 
+ *
  * Return: void.
  */
 IrcServer::IrcServer( int port, std::string const password )
@@ -41,14 +42,16 @@ IrcServer::IrcServer( int port, std::string const password )
 	);
 	this->_epollCreate();
 	this->_connectionsCount = 0;
+	//BONUS create bot
+
 }
 
 /**
  * ~IrcServer - IrcServer destructor
- * 
+ *
  * This method will close all opened file descriptors,
  * delete all User objects, and clear the connections map.
- * 
+ *
  * Return: void.
  */
 IrcServer::~IrcServer( void ) {
@@ -79,11 +82,11 @@ IrcServer::~IrcServer( void ) {
 
 /**
  * bindSocket - IrcServer bindSocket method
- * 
+ *
  * This method will create a socket, set the socket options
  * to reuse the address, and bind the socket to localhost
  * and specified port.
- * 
+ *
  * Return: void.
  */
 void	IrcServer::_CreateBindListeningSocket( void ) {
@@ -110,24 +113,24 @@ void	IrcServer::_CreateBindListeningSocket( void ) {
 
 /**
  * listenSocket - IrcServer listenSocket method
- * 
+ *
  * This method will listen on the socket for incoming connections.
  * It sets the maximum number of connections to SOMAXCONN.
- * 
+ *
  * Return: void.
  */
 void	IrcServer::_listenSocket( void ) {
 	if (listen(this->_listeningSocket, SOMAXCONN) < 0) {
 		throw IrcServer::server_error("Failed to listen on socket");
 	}
-}	
+}
 
 /**
  * _epollCreate - IrcServer epollCreate instance method
- * 
+ *
  * This method will create an epoll instance,
  * add the listening socket to it, and set up the events.
- * 
+ *
  * Return: void.
  */
 void	IrcServer::_epollCreate( void ) {
@@ -150,13 +153,13 @@ void	IrcServer::_epollCreate( void ) {
 
 /**
  * serverRun - IrcServer serverRun method
- * 
+ *
  * This method will run the server, waiting for events
  * and handling them accordingly. It uses epoll to efficiently
  * wait for events on the listening socket and connected clients.
  * It will handle new connections, read data from clients,
  * and process user commands.
- * 
+ *
  * Return: void.
  */
 void	IrcServer::serverRun( void ) {
@@ -177,19 +180,19 @@ void	IrcServer::serverRun( void ) {
 			INFO_LOGS,
 			COLOR_GRAY
 		);
-	
+
 		this->_eventsLoop(eventsCount);
 	};
 }
 
 /**
  * _connectUser - IrcServer connectUser method
- * 
+ *
  * This method will accept a new user connection,
  * create a new User object for the connection,
  * and add the user to the epoll instance for further events handling.
  * It also updates the connections map and the events map.
- * 
+ *
  * Return: void.
  */
 void	IrcServer::_connectUser( void ) {
@@ -218,13 +221,13 @@ void	IrcServer::_connectUser( void ) {
 
 /**
  * _eventsLoop - IrcServer eventsLoop method
- * 
+ *
  * This method will loop through the events received from epoll,
  * handling new connections and reading data from connected clients.
  * It will also handle user disconnections and cleanup.
- * 
+ *
  * @param eventsCount: the number of events to handle
- * 
+ *
  * Return: void.
  */
 void	IrcServer::_eventsLoop( int eventsCount ) {
@@ -275,14 +278,14 @@ void	IrcServer::_eventsLoop( int eventsCount ) {
 
 /**
  * _handleRequest - IrcServer handleRequest method
- * 
+ *
  * This method will read data from the client socket,
  * process the user's commands, and handle user registration.
  * It will also handle disconnections if the user sends a QUIT command.
- * 
+ *
  * @param eventIndex: the index of the event in the events list
  * @param bytes_read: pointer to an integer to store the number of bytes read
- * 
+ *
  * Return: void.
  */
 void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
@@ -294,7 +297,16 @@ void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
 
 	memset(buffer, 0, sizeof(buffer));
 	bytes = recv(clientSocket, buffer, sizeof(buffer), 0);
+	if (bytes > 0){
+		buffer[bytes] = '\0'; // Null-terminate the string
+		::printMsg(
+			"Received from client " + ::to_string(clientSocket) + ": " + buffer,
+			INFO_LOGS,
+			COLOR_BLUE
+		);
+	}
 	if (bytes < 0) {
+
 		::printErr(
 			"Error reading client socket " + ::to_string(clientSocket)
 		);
@@ -313,27 +325,111 @@ void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
 		 * user is already registred,
 		 * process some other commands.
 		 */
-		::printMsg("NON SUPPORTED COMMAND YET !", INFO_LOGS, COLOR_BLUE);
-		::printMsg("Received Command: " + std::string(buffer), INFO_LOGS, COLOR_BLUE);
-
 		Irc_message ircMessage(buffer);
-	
 		ircMessage.parseMessage();
-		if (ircMessage.getCommand() == "QUIT") {
-			*bytes_read = 0; // Close connection
+
+		std::string command = ircMessage.getCommand();
+		::printMsg("Processing command: " + command, INFO_LOGS, COLOR_BLUE);
+
+		// Log the parsed IRC message content for every command
+		{
+			std::string paramsStr;
+			const std::vector<std::string> &params = ircMessage.getParams();
+			for (std::vector<std::string>::const_iterator it = params.begin(); it != params.end(); ++it) {
+				paramsStr += (it == params.begin() ? "" : ", ") + *it;
+			}
+			std::string trailingStr = ircMessage.getTrailing();
+			::printMsg(
+				std::string("IRCMessage => CMD: ") + command +
+				"\n\t\t\t | PARAMS: [" + paramsStr + "]" +
+				"\n\t\t\t | TRAILING: '" + trailingStr + "'",
+				INFO_LOGS,
+				COLOR_BLUE
+			);
+		}
+
+		if (command == "QUIT") {
+			*bytes_read = 0; // Close connection - cleanup will be handled in _eventsLoop
+		}
+		else if (command == "JOIN") {
+			joinCommand(*user, ircMessage);
+		}
+		else if (command == "PART"){
+			partCmd(*user, ircMessage);
+		}
+		else if (command == "PING") {
+			if (ircMessage.getParams().size() > 0) {
+				std::string response = ":jarvis_server PONG jarvis_server :" + ircMessage.getParams()[0] + "\r\n";
+				user->sendMessage(response);
+			}
+		}
+		else if (command == "INFO") {
+			if (ircMessage.getParams().size() == 0) {
+				infoCmd(*user);
+			} else {
+				infoCmd(*user, ircMessage.getParams()[0]);
+			}
+}
+		else if (command == "USERS") {
+    		listUsersCmd(*user);
+}
+		else if (command == "POPO"){
+			user->sendMessage("popopopop\r\n");
+				// std::string key = (ircMessage.getParams().size() > 1) ? ircMessage.getParams()[1] : "";
+
+		}
+		else if (command == "PRIVMSG") {
+			privmsgCmd( *user, ircMessage );
+}
+		// else if (command == "msg"){
+		// 	if (ircMessage.getParams().size() > 0){
+		// 		std::string recieverNick = ircMessage.getParams()[1];
+		// 		//remove
+		// 		std::cout << ircMessage.getParams()[0] << std::endl;
+		// 		std::cout << ircMessage.getParams()[1] << std::endl;
+		// 	}
+		// }
+		else if (command == "TOPIC"){
+			topicCmd( *user, ircMessage );
+		}
+		else if (command == "msg"){
+			if (ircMessage.getParams().size() > 0){
+				std::string receiverNick = ircMessage.getParams()[0];
+				std::string msg = ircMessage.getTrailing();
+				User *receiver = findUser( receiverNick );
+				( receiver != 0) ? receiver->sendMessage( user->getPrefix() + " PRIVMSG " + receiverNick + " :" + msg + "\r\n" ) : user->sendMessage(":jarvis_server 411 " + user->getNickname() + " :No recipient given (PRIVMSG)\r\n") ;
+			}
+		}
+		//MODE <channel> {[+|-]modes} [parameters...]
+		else if (command == "MODE"){
+			modeCmd( *user, ircMessage );
+		}
+
+		else if (command == "KICK"){
+			kickCmd(*user, ircMessage);
+		}
+
+		else if (command == "INVITE"){
+			inviteCmd( *user, ircMessage);
+		}
+
+		else {
+			::printMsg("Command not implemented yet: " + command, INFO_LOGS, COLOR_YELLOW);
 		}
 	}
 }
+
+
 
 // exception server errors handling classes.
 
 /**
  * server_error - IrcServer server_error constructor
- * 
+ *
  * This method will set the error message
- * 
+ *
  * @param msg: the error message to be set
- * 
+ *
  * Return: void.
  */
 IrcServer::server_error::server_error( const std::string &msg )
@@ -341,19 +437,19 @@ IrcServer::server_error::server_error( const std::string &msg )
 
 /**
  * ~server_error - IrcServer server_error destructor
- * 
+ *
  * This method will be called when the server_error object is destroyed.
  * It does not throw any exceptions.
- * 
+ *
  * Return: void.
  */
 IrcServer::server_error::~server_error( void ) throw() {}
 
 /**
  * what - IrcServer server_error what method
- * 
+ *
  * This method will return the error message
- * 
+ *
  * Return: const char* - the error message.
  */
 const char* IrcServer::server_error::what( void ) const throw() {
@@ -362,11 +458,11 @@ const char* IrcServer::server_error::what( void ) const throw() {
 
 /**
  * server_error - IrcServer server_error constructor
- * 
+ *
  * This method will set the error message
- * 
+ *
  * @param msg: the error message to be set
- * 
+ *
  * Return: void.
  */
 IrcServer::user_connection_error::user_connection_error( const std::string &msg )
@@ -374,19 +470,19 @@ IrcServer::user_connection_error::user_connection_error( const std::string &msg 
 
 /**
  * ~server_error - IrcServer server_error destructor
- * 
+ *
  * This method will be called when the server_error object is destroyed.
  * It does not throw any exceptions.
- * 
+ *
  * Return: void.
  */
 IrcServer::user_connection_error::~user_connection_error( void ) throw() {};
 
 /**
  * what - IrcServer server_error what method
- * 
+ *
  * This method will return the error message
- * 
+ *
  * Return: const char* - the error message.
  */
 const char* IrcServer::user_connection_error::what( void ) const throw() {
@@ -395,9 +491,9 @@ const char* IrcServer::user_connection_error::what( void ) const throw() {
 
 /**
  * signalHandler - signal handler for SIGINT
- * 
+ *
  * @param signal: the signal number (e.g., SIGINT)
- * 
+ *
  * Return: void.
  */
 void	IrcServer::signalHandler( int signal ) {

@@ -6,6 +6,8 @@
 #include <set>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <algorithm>
+#include <cstdio>
 
 enum user_registration_state {
 	UNREGISTRED, // just connected
@@ -23,6 +25,9 @@ private:
 	int									_regitrationStep;
 	std::string							_serverPassword;
 
+	//* ban flage tacks a ref to channel and she
+
+
 	// unique nickname and username over all users
 	static std::set<std::string>		_registredNicknames;
 	static std::set<std::string>		_registredUsernames;
@@ -36,7 +41,7 @@ private:
 	User( User const &other );
 	User &operator=( User const &other );
 	User( void );
-	
+
 public:
 	// constructor
 	User( const std::string &serverPass, int sock );
@@ -49,8 +54,32 @@ public:
 	void	removeUserNickname( void );
 	void	removeUserUsername( void );
 
+	// Debug method to print all attributes
+	void printDebugInfo() const;
+
 	// getters
 	std::string const		getNickname( void ) const;
 	std::string const		getUsername( void ) const;
 	user_registration_state	getState( void ) const;
+
+	//CHA
+	void sendMessage( std::string message ){
+		std::cout << "[DEBUG] sendMessage called for user: " << getNickname() << std::endl;
+		std::cout << "\033[32m" << "[DEBUG] Message: " << message << "\033[32m" << std::endl;
+		ssize_t sent = send(_sock, message.c_str(), message.length(), 0);
+		std::cout << "[DEBUG] send() returned: " << sent << " for user: " << getNickname() << std::endl;
+		if (sent == -1) perror("send");
+	}
+	std::string getPrefix() const {
+		std::string nickname = this->getNickname();
+		std::string username = this->getUsername();
+
+		// Check if nickname and username are set
+		if (nickname.empty() || username.empty()) {
+			return ":unknown!unknown@localhost";
+		}
+
+		return ":" + nickname + "!" + username + "@localhost";
+	}
+
 };

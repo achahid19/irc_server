@@ -2,6 +2,10 @@
 
 #include <iostream>
 #include <sstream>
+#include <cstdlib>  // for strtol
+#include <cerrno>   // for errno
+#include <climits>  // for INT_MAX
+
 
 // define colors
 #define COLOR_RESET "\033[0m"
@@ -42,3 +46,6 @@ public:
 };
 
 std::string	ft_trim_spaces( const std::string &str );
+
+//CHA
+int parsePositiveInteger(const std::string& s);

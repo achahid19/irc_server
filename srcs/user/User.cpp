@@ -10,12 +10,12 @@ std::set<std::string> User::_registredUsernames = std::set<std::string>();
 
 /**
  * User - User constructor
- * 
+ *
  * This method will set and initialize User data
- * 
+ *
  * @param serverPass: the password used by client's to access this server
  * @param sock: the socket of the user connection
- * 
+ *
  * Return: void.
  */
 User::User( const std::string &serverPass, int sock ) {
@@ -23,6 +23,14 @@ User::User( const std::string &serverPass, int sock ) {
 	this->_userSupportedCommands.insert("USER");
 	this->_userSupportedCommands.insert("PASS");
 	this->_userSupportedCommands.insert("CAP");
+	this->_userSupportedCommands.insert("JOIN");
+	this->_userSupportedCommands.insert("PART");
+	this->_userSupportedCommands.insert("PRIVMSG");
+	this->_userSupportedCommands.insert("TOPIC");
+	this->_userSupportedCommands.insert("MODE");
+	this->_userSupportedCommands.insert("KICK");
+	this->_userSupportedCommands.insert("PING");
+	this->_userSupportedCommands.insert("QUIT");
 
 	this->_userData.insert(std::make_pair("NICK", ""));
 	this->_userData.insert(std::make_pair("USER", ""));
@@ -37,11 +45,11 @@ User::User( const std::string &serverPass, int sock ) {
 
 /**
  * append - User append method
- * 
+ *
  * This method will append a buffer to the user's irc message.
- * 
+ *
  * @param buffer: the buffer to be appended
- * 
+ *
  * Return: void.
  */
 void User::append( const char *buffer ) {
@@ -51,12 +59,12 @@ void User::append( const char *buffer ) {
 
 /**
  * registerUser - User registerUser method
- * 
+ *
  * This method will parse the user's irc message,
  * and register the user if all conditions are met.
  * It will handle NICK, USER, PASS commands,
  * and send appropriate responses to the user.
- * 
+ *
  * Return: void.
  */
 void	User::registerUser( void ) {
@@ -84,10 +92,17 @@ void	User::registerUser( void ) {
 			continue; // skip unsupported commands
 		}
 		if (command == "CAP") {
-			std::string response(
-				":jarvis_server 421 " + this->getNickname() + " CAP :No CAPs\r\n"
-			);
-			send(this->_sock, response.c_str(), response.size(), 0);
+			if (ircMessage.getParams().size() > 0) {
+				std::string subcommand = ircMessage.getParams()[0];
+				if (subcommand == "LS") {
+					std::string response(":jarvis_server CAP * LS :\r\n");
+					send(this->_sock, response.c_str(), response.size(), 0);
+				}
+				else if (subcommand == "END") {
+					std::string response(":jarvis_server CAP * END\r\n");
+					send(this->_sock, response.c_str(), response.size(), 0);
+				}
+			}
 		}
 		else if (command == "NICK" && this->getNickname().empty()) {
 			if (ircMessage.parseNickCommand() == false) {
@@ -148,9 +163,9 @@ void	User::registerUser( void ) {
 
 /**
  * isUserRegistred - User isUserRegistred method
- * 
+ *
  * This method will check if the user is registered.
- * 
+ *
  * Return: true if the user is registered, false otherwise.
  */
 bool	User::isUserRegistred( void ) const {
@@ -159,11 +174,11 @@ bool	User::isUserRegistred( void ) const {
 
 /**
  * isSupportedCommand - User isSupportedCommand method
- * 
+ *
  * This method will check if the command is supported by the server.
- * 
+ *
  * @param cmd: the command to be checked
- * 
+ *
  * Return: true if the command is supported, false otherwise.
  */
 bool	User::isSupportedCommand( std::string const& cmd ) const {
@@ -174,10 +189,10 @@ bool	User::isSupportedCommand( std::string const& cmd ) const {
 
 /**
  * removeUserNickname - User removeUserNickname method
- * 
+ *
  * This method will remove the user's nickname from the registered nicknames set.
  * It is called when the user is disconnected or when the nickname is changed.
- * 
+ *
  * Return: void.
  */
 void	User::removeUserNickname( void ) {
@@ -188,10 +203,10 @@ void	User::removeUserNickname( void ) {
 
 /**
  * removeUserUsername - User removeUserUsername method
- * 
+ *
  * This method will remove the user's username from the registered usernames set.
  * It is called when the user is disconnected or when the username is changed.
- * 
+ *
  * Return: void.
  */
 void	User::removeUserUsername( void ) {
@@ -204,9 +219,9 @@ void	User::removeUserUsername( void ) {
 
 /**
  * getNickname - User getNickname method
- * 
+ *
  * This method will return the user's nickname.
- * 
+ *
  * Return: the user's nickname as a string.
  */
 std::string const	User::getNickname( void ) const {
@@ -217,9 +232,9 @@ std::string const	User::getNickname( void ) const {
 
 /**
  * getUsername - User getUsername method
- * 
+ *
  * This method will return the user's username.
- * 
+ *
  * Return: the user's username as a string.
  */
 std::string const	User::getUsername( void ) const {
@@ -230,9 +245,9 @@ std::string const	User::getUsername( void ) const {
 
 /**
  * getState - User getState method
- * 
+ *
  * This method will return the user's registration state.
- * 
+ *
  * Return: the user's registration state as an enum user_registration_state.
  */
 user_registration_state	User::getState( void ) const {
@@ -243,13 +258,13 @@ user_registration_state	User::getState( void ) const {
 
 /**
  * _setNickname - User _setNickname method
- * 
+ *
  * This method will set the user's nickname.
  * It checks if the nickname is valid and not already in use.
  * If the nickname is valid, it adds it to the registered nicknames set.
- * 
+ *
  * @param nickName: the nickname to be set
- * 
+ *
  * Return: true if the nickname is set successfully, false otherwise.
  */
 bool	User::_setNickname( std::string const& nickName ) {
@@ -279,25 +294,17 @@ bool	User::_setNickname( std::string const& nickName ) {
 
 /**
  * _setUsername - User _setUsername method
- * 
+ *
  * This method will set the user's username.
  * It checks if the username is valid and not already in use.
  * If the username is valid, it adds it to the registered usernames set.
- * 
+ *
  * @param userName: the username to be set
- * 
+ *
  * Return: true if the username is set successfully, false otherwise.
  */
 bool	User::_setUsername( std::string const& userName ) {
-	if (_registredUsernames.find(userName) != _registredUsernames.end()) {
-		std::string response(
-			":jarvis_server 432 * " + userName + " USER :is already in use\r\n"
-		);
-		send(this->_sock, response.c_str(), response.size(), 0);
-		this->_state = DISCONNECT;
-		return false;
-	}
-	else if (userName.empty() || userName.length() > 9
+	if (userName.empty() || userName.length() > 9
 			|| userName.find_first_not_of(
 			"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-"
 		) != std::string::npos
@@ -315,11 +322,11 @@ bool	User::_setUsername( std::string const& userName ) {
 
 /**
  * _checkPassword - User _checkPassword method
- * 
+ *
  * This method will check if the provided password matches the server's password.
- * 
+ *
  * @param password: the password to be checked
- * 
+ *
  * Return: true if the password is correct, false otherwise.
  */
 bool	User::_checkPassword( std::string const& password ) {
