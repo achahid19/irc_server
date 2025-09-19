@@ -178,96 +178,65 @@ public:
 		_channels[channelName]->pingUser( user, message );
 	}
 
-	void	topicCmd( User &user, std::string channelName, std::string newTopic)
-	{
+	// void	topicCmd( User &user, std::string channelName, std::string newTopic)
+	// {
+	// 	//check if channel exists
+	// 	if (isChannelExist(channelName) == false){
+	// 		// 403 ERR_NOSUCHCHANNEL <channel> :No such channel
+	// 		return ;
+	// 	}
+	// 	//check if user in channel that will be done at the done inside the channel class
+	// 	if ( newTopic.empty() ){
+	// 		// viewTopic();
+	// 	}
+	// 	else {
+	// 		_channels[channelName]->setChannelTopic( user, newTopic );
+	// 	}
+	// }
+
+	// void	modeCmd( User &user, std::string channelName, std::string mode, std::string param ){
 		//check if channel exists
-		if (isChannelExist(channelName) == false){
-			// 403 ERR_NOSUCHCHANNEL <channel> :No such channel
-			return ;
-		}
-		//check if user in channel that will be done at the done inside the channel class
-		if ( newTopic.empty() ){
-			// viewTopic();
-		}
-		else {
-			_channels[channelName]->setChannelTopic( user, newTopic );
-		}
-	}
+	// 	if (isChannelExist(channelName) == false){
+	// 		// 403 ERR_NOSUCHCHANNEL <channel> :No such channel
+	// 		return ;
+	// 	}
+	// 	if (mode == "+i"){
+	// 		_channels[channelName]->setInviteOnly(user);
+	// 	}
+	// 	else if (mode == "-i"){
+	// 		_channels[channelName]->removeInviteOnly(user);
+	// 	}
+	// 	else if (mode == "+t"){
+	// 		_channels[channelName]->setTopicOps(user);
+	// 	}
+	// 	else if (mode == "-t"){
+	// 		_channels[channelName]->removeTopicOps(user);
 
-	void	modeCmd( User &user, std::string channelName, std::string mode, std::string param ){
-		//check if channel exists
-		if (isChannelExist(channelName) == false){
-			// 403 ERR_NOSUCHCHANNEL <channel> :No such channel
-			return ;
-		}
-		if (mode == "+i"){
-			_channels[channelName]->setInviteOnly(user);
-		}
-		else if (mode == "-i"){
-			_channels[channelName]->removeInviteOnly(user);
-		}
-		else if (mode == "+t"){
-			_channels[channelName]->setTopicOps(user);
-		}
-		else if (mode == "-t"){
-			_channels[channelName]->removeTopicOps(user);
+	// 	}
+	// 	else if (mode == "+k"){
+	// 		_channels[channelName]->setKey(user, param);
+	// 	}
+	// 	else if (mode == "-k"){
+	// 		_channels[channelName]->removeKey(user);
 
-		}
-		else if (mode == "+k"){
-			_channels[channelName]->setKey(user, param);
-		}
-		else if (mode == "-k"){
-			_channels[channelName]->removeKey(user);
+	// 	}
+	// 	else if (mode == "+l"){
+	// 		_channels[channelName]->setLimit(user, param);
+	// 	}
+	// 	else if (mode == "-l"){
+	// 		_channels[channelName]->removeLimit(user);
 
-		}
-		else if (mode == "+l"){
-			_channels[channelName]->setLimit(user, param);
-		}
-		else if (mode == "-l"){
-			_channels[channelName]->removeLimit(user);
+	// 	}
+	// 	else if (mode == "+o"){
+	// 		_channels[channelName]->setOps(user, param);
+	// 	}
+	// 	else if (mode == "-o"){
+	// 		_channels[channelName]->removeOps(user, param);
 
-		}
-		else if (mode == "+o"){
-			_channels[channelName]->setOps(user, param);
-		}
-		else if (mode == "-o"){
-			_channels[channelName]->removeOps(user, param);
+	// 	}
+	// 	else {}
+	// }
 
-		}
-		else {}
-	}
-
-	void	inviteCmd( User &user, Irc_message &ircMessage){
-		if (ircMessage.getParams().size() > 1){
-				//check channel is exicst
-				std::string channelname = ircMessage.getParams()[1];
-				if (channelname[0] != '#') return;
-				std::string cleanChannelName = channelname.substr(1);
-				if (!isChannelExist(cleanChannelName))
-				{
-					//:irc.localhost 403 alice #somechan :No such channel
-					std::string reply = ":jarvis_server 403 " + user.getNickname() + " #" + cleanChannelName + " :No such channel" + "\r\n";
-					user.sendMessage( reply );
-					return;
-				}
-				if (!_channels[cleanChannelName]->isUserInChannel(user.getNickname())) {
-					//:irc.localhost 442 alice #somechan :You're not on that channel
-					std::string reply = ":jarvis_server 442 " + user.getNickname() + " #" + cleanChannelName + " :You're not on that channel" + "\r\n";
-					user.sendMessage( reply );
-					return;
-				}
-				std::string userNick = ircMessage.getParams()[0];
-				// add to invite list
-				_channels[cleanChannelName]->inviteUser(user, userNick);
-				// notify inviter
-				user.sendMessage(":jarvis_server 341 " + user.getNickname() + " " + userNick + " #" + cleanChannelName + "\r\n");
-				// try to notify invitee if online
-				User *invitee = findUser(userNick);
-				if (invitee) {
-					invitee->sendMessage(user.getPrefix() + " INVITE " + userNick + " #" + cleanChannelName + "\r\n");
-				}
-			}
-	}
 	// void	kickCmd( User &user, std::string channelName, std::string toKickUser){
 	// 			//check if channel exists
 	// 		(void)user;
@@ -418,7 +387,9 @@ void	joinCommand(User &user, Irc_message &ircMessage);
 void	partCmd( User &user, Irc_message &ircMessage );
 void	privmsgCmd( User &user, Irc_message &ircMessage );
 void	kickCmd( User &user, Irc_message &ircMessage );
-
+void	topicCmd( User &user, Irc_message &ircMessage );
+void	modeCmd( User &user, Irc_message &ircMessage );
+void	inviteCmd( User &user, Irc_message &ircMessage);
 
 
 

@@ -12,7 +12,11 @@ SRCS =	$(addprefix srcs/, main.cpp ) \
 		$(addprefix srcs/channel/, Join_cmd.cpp ) \
 		$(addprefix srcs/channel/, Part_cmd.cpp ) \
 		$(addprefix srcs/channel/, Privmsg_cmd.cpp ) \
-		$(addprefix srcs/channel/, Kick_cmd.cpp ) 
+		$(addprefix srcs/channel/, Kick_cmd.cpp ) \
+		$(addprefix srcs/channel/, Topic_cmd.cpp ) \
+		$(addprefix srcs/channel/, Mode_cmd.cpp ) \
+		$(addprefix srcs/channel/, Invite_cmd.cpp ) 
+
 
 
 
