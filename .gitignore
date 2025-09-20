@@ -69,3 +69,4 @@ logs/
 CMakeLists.txt
 google_test/
 unit_tests/
+test.sh
