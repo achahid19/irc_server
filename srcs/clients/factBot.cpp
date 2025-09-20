@@ -97,6 +97,6 @@ std::string	factBot::getFact( const std::string& key ) const {
 	if (it != facts.end()) {
 		return it->second;
 	} else {
-		return "Fact not found for key: " + key;
+		return "";
 	}
 }

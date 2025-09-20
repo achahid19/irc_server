@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <algorithm>
 #include <cstdio>
+#include "utils.hpp"
 
 enum user_registration_state {
 	UNREGISTRED, // just connected
@@ -64,11 +65,14 @@ public:
 
 	//CHA
 	void sendMessage( std::string message ){
-		std::cout << "[DEBUG] sendMessage called for user: " << getNickname() << std::endl;
-		std::cout << "\033[32m" << "[DEBUG] Message: " << message << "\033[32m" << std::endl;
-		ssize_t sent = send(_sock, message.c_str(), message.length(), 0);
-		std::cout << "[DEBUG] send() returned: " << sent << " for user: " << getNickname() << std::endl;
-		if (sent == -1) perror("send");
+		if (!DEBUG_LOGS){
+
+			std::cout << "[DEBUG] sendMessage called for user: " << getNickname() << std::endl;
+			std::cout << "\033[32m" << "[DEBUG] Message: " << message << "\033[32m" << std::endl;
+			//std::cout << "[DEBUG] send() returned: " << sent << " for user: " << getNickname() << std::endl;
+		}
+		send(_sock, message.c_str(), message.length(), 0);
+		
 	}
 	std::string getPrefix() const {
 		std::string nickname = this->getNickname();

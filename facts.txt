@@ -11,3 +11,5 @@ fact: new fact
 fact: new fact
 some other fact: this is not a fact
 grass: not grass
+founders: The founders of this Server are Salah & Anas
+

@@ -3,6 +3,7 @@
 #include "Irc_message.hpp"
 #include "User.hpp"
 #include "Channel.hpp"
+#include "factBot.hpp"
 
 /**
  * TODO list -
@@ -42,8 +43,7 @@ IrcServer::IrcServer( int port, std::string const password )
 	);
 	this->_epollCreate();
 	this->_connectionsCount = 0;
-	//BONUS create bot
-
+	this->factsBot = new factBot("facts.txt");
 }
 
 /**
@@ -78,6 +78,7 @@ IrcServer::~IrcServer( void ) {
 		INFO_LOGS,
 		COLOR_GREEN
 	);
+	delete this->factsBot;
 }
 
 /**
@@ -169,9 +170,7 @@ void	IrcServer::serverRun( void ) {
 
 		int eventsCount = epoll_wait(this->_epollFd, this->_events.data(), this->_maxEvents, -1);
 		if (eventsCount < 0) {
-			::printErr(
-				"Error in epoll_wait: " + std::string(strerror(errno))
-			);
+			::printErr("Error in epoll_wait");
 			continue; // handle error, but continue running the server
 		}
 
@@ -348,7 +347,41 @@ void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
 			);
 		}
 
-		if (command == "QUIT") {
+		// bot commands
+		if (command == "!add") {
+			std::string response;
+			// check params count
+			if (ircMessage.getParams().size() != 2) {
+				response = ":jarvis_server " + user->getNickname() + " :Invalid param: Usage: !add <key> <fact>\r\n";
+				send(clientSocket, response.c_str(), response.size(), 0);
+				return ;
+			}
+			response = ":jarvis_server " + user->getNickname() + " :Your fact is stored Successfully!\r\n";
+			if (this->factsBot->getFact(ircMessage.getParams()[0]) != "") {
+				response = ":jarvis_server " + user->getNickname() + " :Fact with this key already exists. Use a different key or update the fact.\r\n";
+				send(clientSocket, response.c_str(), response.size(), 0);
+				return ;
+			}	
+			this->factsBot->addFact(ircMessage.getParams()[0], ircMessage.getParams()[1]);
+			send(clientSocket, response.c_str(), response.size(), 0);
+		}
+		else if (command == "!fact") {
+			std::string response;
+			// check params count
+			if (ircMessage.getParams().size() != 1) {
+				response = ":jarvis_server " + user->getNickname() + " :Invalid param: Usage: !fact <key>\r\n";
+				send(clientSocket, response.c_str(), response.size(), 0);
+				return ;
+			}
+			std::string fact = this->factsBot->getFact(ircMessage.getParams()[0]);
+			if (fact != "") {
+				response = ":jarvis_server " + user->getNickname() + " :" + fact + "\r\n";
+			} else {
+				response = ":jarvis_server " + user->getNickname() + " :No fact found for key: " + ircMessage.getParams()[0] + "\r\n";
+			}
+			send(clientSocket, response.c_str(), response.size(), 0);
+		}
+		else if (command == "QUIT") {
 			*bytes_read = 0; // Close connection - cleanup will be handled in _eventsLoop
 		}
 		else if (command == "JOIN") {
