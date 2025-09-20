@@ -78,6 +78,8 @@ IrcServer::~IrcServer( void ) {
 		INFO_LOGS,
 		COLOR_GREEN
 	);
+	for (std::map<std::string, Channel*>::iterator it = _channels.begin(); it != _channels.end(); it++)
+		delete it->second;
 }
 
 /**

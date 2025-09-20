@@ -45,6 +45,9 @@ void	IrcServer::partCmd( User &user, Irc_message &ircMessage ){
 	// Remove user from channel
 	_channels[cleanChannelName]->removeUser(user);
 
+	if (_channels[cleanChannelName]->isfull() && (_channels[cleanChannelName]->getChannelCounter() < _channels[cleanChannelName]->getChannelMaxUsers()))
+		_channels[cleanChannelName]->availableChannel();
+
 	// Check if channel is empty and remove it
 	if (_channels[cleanChannelName]->getChannelCounter() == 0){
 		delete _channels[cleanChannelName];

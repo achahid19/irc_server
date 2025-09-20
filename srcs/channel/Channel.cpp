@@ -108,7 +108,7 @@ int Channel::addUser(User& newUser, std::string key) {
 	}
 
 	// Update full status if limit is set
-	if (_channelUserCounter > _channelMaxUsers && _isLimitSet) {
+	if (_channelUserCounter == _channelMaxUsers && _isLimitSet) {
 		_isfull = true;
 	}
 
@@ -541,5 +541,8 @@ std::string Channel::WhoIsInvite(void) const{
 		r.append(*iter);
 	}
 	return r;
+}
 
+void Channel::availableChannel( void ){
+		this->_isfull = false;
 }

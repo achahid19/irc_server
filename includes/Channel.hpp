@@ -68,6 +68,7 @@ public:
 	void removeLimit(User &user);
 	void setOps(User &user, std::string targetUser);
 	void removeOps(User &user, std::string targetUser);
+	void availableChannel( void );
 
 	// User management
 	void kickUser(User &user, std::string badUser);
