@@ -89,44 +89,7 @@ This efficiency is why `epoll` is the standard for high-performance networking o
 
 The server is built around a central event loop powered by `epoll`. It maintains the state of all connected clients and channels, processing commands as they arrive.
 
-```
-+---------------------+
-|   Server Startup    |
-| - Create epoll fd   |
-| - Bind listening sock|
-+---------------------+
-          |
-          v
-+---------------------+
-|   Main Event Loop   |
-|   (epoll_wait)      |
-+---------------------+
-          |
-+------------------------------------------+
-|                                          |
-v                                          v
-[ New Connection Event ]                 [ Client Data Event ]
-  - accept() new client                    - read() data from client socket
-  - Create Client object                   - Append to client's buffer
-  - Add client fd to epoll                 - Check for complete commands (\r\n)
-                                           - If complete:
-                                               |
-                                               v
-                                     +--------------------+
-                                     | Command Processor  |
-                                     | - Parse command    |
-                                     | - Check permissions|
-                                     | - Execute command  |
-                                     +--------------------+
-                                               |
-                                               v
-                                     +--------------------+
-                                     |  State Management  |
-                                     | - Update Client    |
-                                     | - Update Channel   |
-                                     | - Send replies     |
-                                     +--------------------+
-```
+<img src="./irc_server_flowChart.png" alt="IRC Server Architecture" width=auto/>
 
 ***
 
