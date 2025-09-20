@@ -347,6 +347,13 @@ void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
 			);
 		}
 
+		// check if command is implemented first 
+		if (!user->isSupportedCommand(command)) {
+			std::string response = ":jarvis_server 421 " + user->getNickname() + " " + command + " :Unknown command\r\n";
+			send(clientSocket, response.c_str(), response.size(), 0);
+			return ;
+		}
+		
 		// bot commands
 		if (command == "!add") {
 			std::string response;
@@ -444,10 +451,6 @@ void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
 
 		else if (command == "INVITE"){
 			inviteCmd( *user, ircMessage);
-		}
-
-		else {
-			::printMsg("Command not implemented yet: " + command, INFO_LOGS, COLOR_YELLOW);
 		}
 	}
 }

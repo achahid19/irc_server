@@ -37,7 +37,7 @@ User::User( const std::string &serverPass, int sock ) {
 
 	// bots commands
 	this->_userSupportedCommands.insert("!add");
-	this->_userSupportedCommands.insert("!get");
+	this->_userSupportedCommands.insert("!fact");
 
 	this->_serverPassword = serverPass;
 	this->_sock = sock;

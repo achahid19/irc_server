@@ -60,12 +60,9 @@ std::string Channel::usersNames(void) {
 	}
 
 	// Debug output
-	if (DEBUG_LOGS) {
-		std::cout << "[DEBUG] usersNames() called for channel: " << _channelName << std::endl;
-		std::cout << "[DEBUG] Channel users map size: " << _channelUsers.size() << std::endl;
-		std::cout << "[DEBUG] Generated names: " << names << std::endl;
-	}
-	
+	std::cout << "[DEBUG] usersNames() called for channel: " << _channelName << std::endl;
+	std::cout << "[DEBUG] Channel users map size: " << _channelUsers.size() << std::endl;
+	std::cout << "[DEBUG] Generated names: " << names << std::endl;
 
 	return names;
 }
