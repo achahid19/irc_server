@@ -288,7 +288,7 @@ void	IrcServer::_eventsLoop( int eventsCount ) {
  * Return: void.
  */
 void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
-	char			buffer[1024];
+	char			buffer[4096];
 	int				bytes;
 	int				i = eventIndex;
 	int				clientSocket = this->_events[i].data.fd;
