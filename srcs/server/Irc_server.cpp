@@ -388,6 +388,22 @@ void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
 			}
 			send(clientSocket, response.c_str(), response.size(), 0);
 		}
+
+		// change nickname
+		else if (command == "NICK") {
+			std::string newNick = ircMessage.getParams()[0];
+			std::string oldNick = user->getNickname();
+			if (newNick == oldNick || !user->setNickname(newNick)) {
+				return ; // no change
+			}
+
+			std::string response = ":" + oldNick + "!~jarvis@jarvis_server NICK :" + newNick + "\r\n";
+
+			user->removeNickname(oldNick);
+			user->addUsername(newNick);
+			send(clientSocket, response.c_str(), response.size(), 0);
+		}
+		
 		else if (command == "QUIT") {
 			*bytes_read = 0; // Close connection - cleanup will be handled in _eventsLoop
 		}

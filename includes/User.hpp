@@ -8,7 +8,6 @@
 #include <unistd.h>
 #include <algorithm>
 #include <cstdio>
-#include "utils.hpp"
 
 enum user_registration_state {
 	UNREGISTRED, // just connected
@@ -34,7 +33,6 @@ private:
 	static std::set<std::string>		_registredUsernames;
 
 	// private setters
-	bool	_setNickname( std::string const& nickName );
 	bool	_setUsername( std::string const& userName );
 	bool	_checkPassword( std::string const& password );
 
@@ -63,16 +61,24 @@ public:
 	std::string const		getUsername( void ) const;
 	user_registration_state	getState( void ) const;
 
+	// public setters
+	bool	setNickname( std::string const& nickName );
+
+	// for changing nickname validation
+	void	removeNickname( std::string const& nickName ) {
+		_registredNicknames.erase(nickName);
+	}
+	void	addUsername( std::string const& userName ) {
+		_registredUsernames.insert(userName);
+	}
+
 	//CHA
 	void sendMessage( std::string message ){
-		if (!DEBUG_LOGS){
-
-			std::cout << "[DEBUG] sendMessage called for user: " << getNickname() << std::endl;
-			std::cout << "\033[32m" << "[DEBUG] Message: " << message << "\033[32m" << std::endl;
-			//std::cout << "[DEBUG] send() returned: " << sent << " for user: " << getNickname() << std::endl;
-		}
-		send(_sock, message.c_str(), message.length(), 0);
-		
+		std::cout << "[DEBUG] sendMessage called for user: " << getNickname() << std::endl;
+		std::cout << "\033[32m" << "[DEBUG] Message: " << message << "\033[32m" << std::endl;
+		ssize_t sent = send(_sock, message.c_str(), message.length(), 0);
+		std::cout << "[DEBUG] send() returned: " << sent << " for user: " << getNickname() << std::endl;
+		if (sent == -1) perror("send");
 	}
 	std::string getPrefix() const {
 		std::string nickname = this->getNickname();
