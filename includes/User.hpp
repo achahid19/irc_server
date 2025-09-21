@@ -33,7 +33,6 @@ private:
 	static std::set<std::string>		_registredUsernames;
 
 	// private setters
-	bool	_setNickname( std::string const& nickName );
 	bool	_setUsername( std::string const& userName );
 	bool	_checkPassword( std::string const& password );
 
@@ -61,6 +60,17 @@ public:
 	std::string const		getNickname( void ) const;
 	std::string const		getUsername( void ) const;
 	user_registration_state	getState( void ) const;
+
+	// public setters
+	bool	setNickname( std::string const& nickName );
+
+	// for changing nickname validation
+	void	removeNickname( std::string const& nickName ) {
+		_registredNicknames.erase(nickName);
+	}
+	void	addUsername( std::string const& userName ) {
+		_registredUsernames.insert(userName);
+	}
 
 	//CHA
 	void sendMessage( std::string message ){

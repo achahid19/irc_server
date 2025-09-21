@@ -5,7 +5,7 @@ CFLAGS = -Wall -Wextra -Werror -std=c++98
 
 SRCS =	$(addprefix srcs/, main.cpp ) \
 		$(addprefix srcs/server/, Irc_server.cpp ) \
-		$(addprefix srcs/user/, User.cpp ) \
+		$(addprefix srcs/clients/, factBot.cpp User.cpp ) \
 		$(addprefix srcs/utils/, utils.cpp ) \
 		$(addprefix srcs/parsing/, Irc_message.cpp ) \
 		$(addprefix srcs/channel/, Channel.cpp ) \

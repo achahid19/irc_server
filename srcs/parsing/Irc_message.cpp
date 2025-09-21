@@ -30,45 +30,67 @@ Irc_message::Irc_message( const std::string message ) {
  * 
  * Return: void.
  */
-void Irc_message::parseMessage( void ) {
-	// check for prefix first
-	size_t prefixEnd = _message.find(' ');
-	if (prefixEnd != std::string::npos && _message[0] == ':') {
-		_prefix = ft_trim_spaces(_message.substr(1, prefixEnd - 1)); // skip the ':'
-		_message.erase(0, prefixEnd + 1); // remove prefix from message
-		this->_hasPrefix = true;
-	} else {
-		_prefix = "";
-	}
-	// find command
-	size_t commandEnd = _message.find(' ');
-	if (commandEnd != std::string::npos) {
-		_command = ft_trim_spaces(_message.substr(0, commandEnd));
-		_message.erase(0, commandEnd + 1); // remove command from message
-	} else {
-		_command = _message;
-		_message.clear(); // no more message left
-	}
-	// find params
-	size_t paramEnd = _message.find(':');
-	if (paramEnd != std::string::npos) {
-		// there is a trailing part
-		_trailing = ft_trim_spaces(_message.substr(paramEnd + 1));
-		_message.erase(paramEnd); // remove trailing part from message
-	} else {
-		_trailing = "";
-	}
-	while (!(_message.empty())) {
-		size_t spacePos = _message.find(' ');
-		if (spacePos != std::string::npos) {
-			_params.push_back(ft_trim_spaces(_message.substr(0, spacePos)));
-			_message.erase(0, spacePos + 1); // remove param from message
-		} else {
-			_params.push_back(ft_trim_spaces(_message));
-			_message.clear(); // no more message left
+void Irc_message::parseMessage() {
+	// Extract prefix (if it starts with ':')
+	if (_message[0] == ':') {
+		size_t space = _message.find(' ');
+		if (space != std::string::npos) {
+			_prefix = ft_trim_spaces(_message.substr(1, space - 1));
+			_message.erase(0, space + 1);
+			_hasPrefix = true;
 		}
 	}
+
+	// Extract command
+	size_t space = _message.find(' ');
+	if (space != std::string::npos) {
+		_command = ft_trim_spaces(_message.substr(0, space));
+		_message.erase(0, space + 1);
+	} else {
+		_command = ft_trim_spaces(_message);
+		_message.clear();
+		return;
+	}
+
+	// Extract trailing (starts with " :")
+	size_t trailingPos = _message.find(" :");
+	if (trailingPos != std::string::npos) {
+		_trailing = ft_trim_spaces(_message.substr(trailingPos + 2));
+		_message.erase(trailingPos);
+	}
+
+	// Extract params (handle quoted args)
+	std::vector<std::string> tokens;
+	std::string token;
+	bool inQuote = false;
+	char quoteChar = '\0';
+
+	for (size_t i = 0; i < _message.length(); ++i) {
+		char c = _message[i];
+
+		if ((c == '"' || c == '\'') && !inQuote) {
+			inQuote = true;
+			quoteChar = c;
+		}
+		else if (c == quoteChar && inQuote) {
+			inQuote = false;
+		}
+		else if (c == ' ' && !inQuote) {
+			if (!token.empty()) {
+				tokens.push_back(ft_trim_spaces(token));
+				token.clear();
+			}
+		}
+		else {
+			token += c;
+		}
+	}
+	if (!token.empty())
+		tokens.push_back(ft_trim_spaces(token));
+
+	_params = tokens;
 }
+
 
 /* parsePassCommand - parse PASS command
  * 

@@ -35,6 +35,10 @@ User::User( const std::string &serverPass, int sock ) {
 	this->_userData.insert(std::make_pair("NICK", ""));
 	this->_userData.insert(std::make_pair("USER", ""));
 
+	// bots commands
+	this->_userSupportedCommands.insert("!add");
+	this->_userSupportedCommands.insert("!fact");
+
 	this->_serverPassword = serverPass;
 	this->_sock = sock;
 	this->_regitrationStep = 0;
@@ -113,7 +117,7 @@ void	User::registerUser( void ) {
 				continue;
 			}
 			std::string nickName = ircMessage.getParams()[0];
-			if (this->_setNickname(nickName) == false) {
+			if (this->setNickname(nickName) == false) {
 				// nickname is not valid, send error and continue
 				continue;
 			}
@@ -257,7 +261,7 @@ user_registration_state	User::getState( void ) const {
 // private setters
 
 /**
- * _setNickname - User _setNickname method
+ * setNickname - User setNickname method
  *
  * This method will set the user's nickname.
  * It checks if the nickname is valid and not already in use.
@@ -267,7 +271,7 @@ user_registration_state	User::getState( void ) const {
  *
  * Return: true if the nickname is set successfully, false otherwise.
  */
-bool	User::_setNickname( std::string const& nickName ) {
+bool	User::setNickname( std::string const& nickName ) {
 	if (_registredNicknames.find(nickName) != _registredNicknames.end()) {
 		std::string response(
 			":jarvis_server 432 * " + nickName + " NICK :is already in use\r\n"

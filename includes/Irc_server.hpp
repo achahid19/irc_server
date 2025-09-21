@@ -20,6 +20,7 @@
 #include "User.hpp"
 #include "Channel.hpp"
 #include "Irc_message.hpp"
+#include "factBot.hpp"
 
 class IrcServer {
 private:
@@ -30,6 +31,9 @@ private:
 	std::string 			_serverPassword;
 	int						_connectionsCount;
 	static bool				_running;
+
+	// bot
+	factBot					*factsBot;
 
 	// epoll stuff
 	int									_epollFd;

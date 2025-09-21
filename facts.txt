@@ -1,0 +1,15 @@
+fact1: hello world
+fact2:
+fact3:nothing to say
+fact4: This is a new fact added to the bot.
+fact5: hello
+fds: ds
+fd: dfs
+d: dd1
+42: this is a private channel
+fact: new fact
+fact: new fact
+some other fact: this is not a fact
+grass: not grass
+founders: The founders of this Server are Salah & Anas
+

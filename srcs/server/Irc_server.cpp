@@ -3,6 +3,7 @@
 #include "Irc_message.hpp"
 #include "User.hpp"
 #include "Channel.hpp"
+#include "factBot.hpp"
 
 /**
  * TODO list -
@@ -36,14 +37,13 @@ IrcServer::IrcServer( int port, std::string const password )
 	this->_CreateBindListeningSocket();
 	this->_listenSocket();
 	::printMsg(
-		"IrcServer Initialized on 127.0.0.1:" + ::to_string(this->_port),
+		"IrcServer Initialized on 0.0.0.0:" + ::to_string(this->_port),
 		INFO_LOGS,
 		COLOR_GRAY
 	);
 	this->_epollCreate();
 	this->_connectionsCount = 0;
-	//BONUS create bot
-
+	this->factsBot = new factBot("facts.txt");
 }
 
 /**
@@ -80,6 +80,7 @@ IrcServer::~IrcServer( void ) {
 	);
 	for (std::map<std::string, Channel*>::iterator it = _channels.begin(); it != _channels.end(); it++)
 		delete it->second;
+	delete this->factsBot;
 }
 
 /**
@@ -100,7 +101,7 @@ void	IrcServer::_CreateBindListeningSocket( void ) {
 	struct sockaddr_in serverAddr;
 
 	serverAddr.sin_family = AF_INET;
-	serverAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
+	serverAddr.sin_addr.s_addr = inet_addr("0.0.0.0");
 	serverAddr.sin_port = htons(this->_port);
 
 	int opt = 1;
@@ -171,9 +172,7 @@ void	IrcServer::serverRun( void ) {
 
 		int eventsCount = epoll_wait(this->_epollFd, this->_events.data(), this->_maxEvents, -1);
 		if (eventsCount < 0) {
-			::printErr(
-				"Error in epoll_wait: " + std::string(strerror(errno))
-			);
+			::printErr("Error in epoll_wait");
 			continue; // handle error, but continue running the server
 		}
 
@@ -291,7 +290,7 @@ void	IrcServer::_eventsLoop( int eventsCount ) {
  * Return: void.
  */
 void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
-	char			buffer[1024];
+	char			buffer[4096];
 	int				bytes;
 	int				i = eventIndex;
 	int				clientSocket = this->_events[i].data.fd;
@@ -350,7 +349,64 @@ void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
 			);
 		}
 
-		if (command == "QUIT") {
+		// check if command is implemented first 
+		if (!user->isSupportedCommand(command)) {
+			std::string response = ":jarvis_server 421 " + user->getNickname() + " " + command + " :Unknown command\r\n";
+			send(clientSocket, response.c_str(), response.size(), 0);
+			return ;
+		}
+		
+		// bot commands
+		if (command == "!add") {
+			std::string response;
+			// check params count
+			if (ircMessage.getParams().size() != 2) {
+				response = ":jarvis_server " + user->getNickname() + " :Invalid param: Usage: !add <key> <fact>\r\n";
+				send(clientSocket, response.c_str(), response.size(), 0);
+				return ;
+			}
+			response = ":jarvis_server " + user->getNickname() + " :Your fact is stored Successfully!\r\n";
+			if (this->factsBot->getFact(ircMessage.getParams()[0]) != "") {
+				response = ":jarvis_server " + user->getNickname() + " :Fact with this key already exists. Use a different key or update the fact.\r\n";
+				send(clientSocket, response.c_str(), response.size(), 0);
+				return ;
+			}	
+			this->factsBot->addFact(ircMessage.getParams()[0], ircMessage.getParams()[1]);
+			send(clientSocket, response.c_str(), response.size(), 0);
+		}
+		else if (command == "!fact") {
+			std::string response;
+			// check params count
+			if (ircMessage.getParams().size() != 1) {
+				response = ":jarvis_server " + user->getNickname() + " :Invalid param: Usage: !fact <key>\r\n";
+				send(clientSocket, response.c_str(), response.size(), 0);
+				return ;
+			}
+			std::string fact = this->factsBot->getFact(ircMessage.getParams()[0]);
+			if (fact != "") {
+				response = ":jarvis_server " + user->getNickname() + " :" + fact + "\r\n";
+			} else {
+				response = ":jarvis_server " + user->getNickname() + " :No fact found for key: " + ircMessage.getParams()[0] + "\r\n";
+			}
+			send(clientSocket, response.c_str(), response.size(), 0);
+		}
+
+		// change nickname
+		else if (command == "NICK") {
+			std::string newNick = ircMessage.getParams()[0];
+			std::string oldNick = user->getNickname();
+			if (newNick == oldNick || !user->setNickname(newNick)) {
+				return ; // no change
+			}
+
+			std::string response = ":" + oldNick + "!~jarvis@jarvis_server NICK :" + newNick + "\r\n";
+
+			user->removeNickname(oldNick);
+			user->addUsername(newNick);
+			send(clientSocket, response.c_str(), response.size(), 0);
+		}
+		
+		else if (command == "QUIT") {
 			*bytes_read = 0; // Close connection - cleanup will be handled in _eventsLoop
 		}
 		else if (command == "JOIN") {
@@ -414,10 +470,6 @@ void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
 
 		else if (command == "INVITE"){
 			inviteCmd( *user, ircMessage);
-		}
-
-		else {
-			::printMsg("Command not implemented yet: " + command, INFO_LOGS, COLOR_YELLOW);
 		}
 	}
 }
