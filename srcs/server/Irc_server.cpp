@@ -382,6 +382,7 @@ void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
 		}
 		else if (command == "PRIVMSG") {
 			privmsgCmd( *user, ircMessage );
+
 }
 		// else if (command == "msg"){
 		// 	if (ircMessage.getParams().size() > 0){

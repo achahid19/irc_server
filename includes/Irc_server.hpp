@@ -178,76 +178,7 @@ public:
 		_channels[channelName]->pingUser( user, message );
 	}
 
-	// void	topicCmd( User &user, std::string channelName, std::string newTopic)
-	// {
-	// 	//check if channel exists
-	// 	if (isChannelExist(channelName) == false){
-	// 		// 403 ERR_NOSUCHCHANNEL <channel> :No such channel
-	// 		return ;
-	// 	}
-	// 	//check if user in channel that will be done at the done inside the channel class
-	// 	if ( newTopic.empty() ){
-	// 		// viewTopic();
-	// 	}
-	// 	else {
-	// 		_channels[channelName]->setChannelTopic( user, newTopic );
-	// 	}
-	// }
 
-	// void	modeCmd( User &user, std::string channelName, std::string mode, std::string param ){
-		//check if channel exists
-	// 	if (isChannelExist(channelName) == false){
-	// 		// 403 ERR_NOSUCHCHANNEL <channel> :No such channel
-	// 		return ;
-	// 	}
-	// 	if (mode == "+i"){
-	// 		_channels[channelName]->setInviteOnly(user);
-	// 	}
-	// 	else if (mode == "-i"){
-	// 		_channels[channelName]->removeInviteOnly(user);
-	// 	}
-	// 	else if (mode == "+t"){
-	// 		_channels[channelName]->setTopicOps(user);
-	// 	}
-	// 	else if (mode == "-t"){
-	// 		_channels[channelName]->removeTopicOps(user);
-
-	// 	}
-	// 	else if (mode == "+k"){
-	// 		_channels[channelName]->setKey(user, param);
-	// 	}
-	// 	else if (mode == "-k"){
-	// 		_channels[channelName]->removeKey(user);
-
-	// 	}
-	// 	else if (mode == "+l"){
-	// 		_channels[channelName]->setLimit(user, param);
-	// 	}
-	// 	else if (mode == "-l"){
-	// 		_channels[channelName]->removeLimit(user);
-
-	// 	}
-	// 	else if (mode == "+o"){
-	// 		_channels[channelName]->setOps(user, param);
-	// 	}
-	// 	else if (mode == "-o"){
-	// 		_channels[channelName]->removeOps(user, param);
-
-	// 	}
-	// 	else {}
-	// }
-
-	// void	kickCmd( User &user, std::string channelName, std::string toKickUser){
-	// 			//check if channel exists
-	// 		(void)user;
-	// 	if (isChannelExist(channelName) == false){
-	// 		// 403 ERR_NOSUCHCHANNEL <channel> :No such channel
-	// 		return ;
-	// 	}
-
-	// }
-
-	// ...existing code...
 
 void infoCmd(User &user, const std::string &channelName = "") {
     // List all channels if no channelName is provided
@@ -390,7 +321,12 @@ void	kickCmd( User &user, Irc_message &ircMessage );
 void	topicCmd( User &user, Irc_message &ircMessage );
 void	modeCmd( User &user, Irc_message &ircMessage );
 void	inviteCmd( User &user, Irc_message &ircMessage);
-
-
+Channel	*findChannelObj( std::string channelName){
+	for (std::map<std::string, Channel*>::iterator it = _channels.begin(); it != _channels.end(); ++it) {
+		if (it->first == channelName)
+			return it->second;
+	}
+	return 0;
+}
 
 };

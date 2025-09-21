@@ -1,11 +1,55 @@
 #include "Irc_server.hpp"
 
+std::string modess( Channel *chan ){
+	std::stringstream info;
+	std::string modes = "";
+    if (chan->isInviteOnly()) modes += "i";
+    if (chan->isTopicOps()) modes += "t";
+    if (chan->isKeyRequired()) modes += "k";
+    if (chan->isLimitSet()) modes += "l";
+
+    info << ":jarvis_server :Modes: " << (modes.empty() ? "none" : "+" + modes) << "\r\n";
+
+    // Channel key/password
+    if (chan->isKeyRequired()) {
+        info << ":jarvis_server INFO :Password: " << chan->getChannelKey() << "\r\n";
+    } else {
+        info << ":jarvis_server INFO :Password: none\r\n";
+    }
+
+    // Channel limit
+    if (chan->isLimitSet()) {
+        info << ":jarvis_server :User limit: " << chan->getChannelMaxUsers() << "\r\n";
+    } else {
+        info << ":jarvis_server :User limit: none\r\n";
+    }
+
+    // Invite-only status
+    info << ":jarvis_server :Invite-only: " << (chan->isInviteOnly() ? "yes" : "no") << "\r\n";
+
+    // Topic protection
+    info << ":jarvis_server :Topic protection: " << (chan->isTopicOps() ? "operators only" : "anyone") << "\r\n";
+
+	// is channelfull
+    info << ":jarvis_server :IS FULL : " << (chan->isfull() ? "yes" : "no") << "\r\n";
+
+	// invited users
+	info << ":invited users:" <<  chan->WhoIsInvite() << "\r\n";
+
+	return info.str();
+}
+
+
+
 void IrcServer::modeCmd( User &user, Irc_message &ircMessage ){
-if (ircMessage.getParams().size() > 1){
+
+
+	if (ircMessage.getParams().size() > 1){
 			//check channel is exicst
 			std::string channelname = ircMessage.getParams()[0];
-			if (channelname[0] != '#') return;
 			std::string cleanChannelName = channelname.substr(1);
+
+			if (channelname[0] != '#') return;
 			if (!isChannelExist(cleanChannelName))
 			{
 				//:irc.localhost 403 alice #somechan :No such channel
@@ -24,7 +68,7 @@ if (ircMessage.getParams().size() > 1){
 			if (modeType.size() > 1){
 				char sign = modeType[0];
 				for (size_t i = 1; i < modeType.size(); i++){
-						if (modeType[i] == 'i' && sign == '+'){
+					if (modeType[i] == 'i' && sign == '+'){
 						_channels[cleanChannelName]->setInviteOnly(user);
 					}
 					else if (modeType[i] == 'i' && sign == '-'){
@@ -94,5 +138,13 @@ if (ircMessage.getParams().size() > 1){
 
 				}
 			}
+			else {
+				
+				std::cout << "[SERVER]" << std::endl;
+				user.sendMessage(modess( this->findChannelObj(cleanChannelName) ));
+
+			}
 		}
+
 }
+
