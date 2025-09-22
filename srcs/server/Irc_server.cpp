@@ -349,13 +349,6 @@ void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
 			);
 		}
 
-		// check if command is implemented first 
-		if (!user->isSupportedCommand(command)) {
-			std::string response = ":jarvis_server 421 " + user->getNickname() + " " + command + " :Unknown command\r\n";
-			send(clientSocket, response.c_str(), response.size(), 0);
-			return ;
-		}
-		
 		// bot commands
 		if (command == "!add") {
 			std::string response;
@@ -403,7 +396,16 @@ void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
 
 			user->removeNickname(oldNick);
 			user->addUsername(newNick);
-			send(clientSocket, response.c_str(), response.size(), 0);
+
+			//std::map<std::string, Channel*> _channels;
+			for(std::map<std::string, Channel*>::iterator it = _channels.begin(); it != _channels.end(); it++){
+				_channels[it->first]->nickUsersList(newNick, oldNick);
+				_channels[it->first]->nickInviteList(newNick, oldNick);
+				_channels[it->first]->nickOpList(newNick, oldNick);
+			}
+
+			user->sendMessage(response);
+
 		}
 		
 		else if (command == "QUIT") {
@@ -470,6 +472,12 @@ void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
 
 		else if (command == "INVITE"){
 			inviteCmd( *user, ircMessage);
+		}
+		// check if command is implemented first 
+		else if (!user->isSupportedCommand(command)) {
+			std::string response = ":jarvis_server 421 " + user->getNickname() + " " + command + " :Unknown command\r\n";
+			send(clientSocket, response.c_str(), response.size(), 0);
+			return ;
 		}
 	}
 }

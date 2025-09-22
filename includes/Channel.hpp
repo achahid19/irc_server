@@ -89,4 +89,29 @@ public:
 	bool isfull(void) const;
 	std::string WhoIsInvite(void) const;
 
+	        //NICK
+	//change on channel users as key not
+	void nickUsersList(std::string newNick, std::string oldNick){
+		if (_channelUsers.find(oldNick) != _channelUsers.end()){
+			//change the k
+			_channelUsers[newNick] = _channelUsers[oldNick];
+			_channelUsers.erase(oldNick);
+		}
+	}
+	//change on operator list
+	void nickOpList( std::string newNick, std::string oldNick ){
+		if (_channelOperators.find(oldNick) != _channelOperators.end()){
+			_channelOperators.erase(oldNick);
+			_channelOperators.insert(newNick);
+		}
+	}
+	//change on invite list
+	void	nickInviteList( std::string newNick, std::string oldNick ){
+		if (_inviteList.find(oldNick) != _inviteList.end()){
+			_inviteList.erase(oldNick);
+			_inviteList.insert(newNick);
+		}
+	}
+
+
 };
