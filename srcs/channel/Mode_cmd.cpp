@@ -1,42 +1,53 @@
 #include "Irc_server.hpp"
 
-std::string modess( Channel *chan ){
+std::string modess( Channel *chan , User &user){
+
+	//324 ircserver nickname #mychannel +tk secretkey
+
+	//324 ircserver nickname #mychannel :  no mode
+
+	//:jarvis_server 324 Alice #mychannel +tk secretkey
+
 	std::stringstream info;
-	std::string modes = "";
-    if (chan->isInviteOnly()) modes += "i";
-    if (chan->isTopicOps()) modes += "t";
-    if (chan->isKeyRequired()) modes += "k";
-    if (chan->isLimitSet()) modes += "l";
+	std::string r = ":jarvis_server 324 " + user.getNickname() + " #" + chan->getChannelName() + " ";
+	std::string modes;
+    if (chan->isInviteOnly()) modes.append("i");
+    if (chan->isTopicOps()) modes.append("t");
+    if (chan->isLimitSet()) modes.append("l");
+    if (chan->isKeyRequired()) {modes.append("k "); modes.append(chan->getChannelKey());}
 
-    info << ":jarvis_server :Modes: " << (modes.empty() ? "none" : "+" + modes) << "\r\n";
+    // info << ":jarvis_server :Modes: " << (modes.empty() ? "no mode" : "+" + modes) << "\r\n";
 
-    // Channel key/password
-    if (chan->isKeyRequired()) {
-        info << ":jarvis_server INFO :Password: " << chan->getChannelKey() << "\r\n";
-    } else {
-        info << ":jarvis_server INFO :Password: none\r\n";
-    }
+    (modes.empty() ? r += "no mode \r\n" : r += "+" + modes + "\r\n");
 
-    // Channel limit
-    if (chan->isLimitSet()) {
-        info << ":jarvis_server :User limit: " << chan->getChannelMaxUsers() << "\r\n";
-    } else {
-        info << ":jarvis_server :User limit: none\r\n";
-    }
 
-    // Invite-only status
-    info << ":jarvis_server :Invite-only: " << (chan->isInviteOnly() ? "yes" : "no") << "\r\n";
+    // // Channel key/password
+    // if (chan->isKeyRequired()) {
+    //     info << ":jarvis_server INFO :Password: " << chan->getChannelKey() << "\r\n";
+    // } else {
+    //     info << ":jarvis_server INFO :Password: none\r\n";
+    // }
 
-    // Topic protection
-    info << ":jarvis_server :Topic protection: " << (chan->isTopicOps() ? "operators only" : "anyone") << "\r\n";
+    // // Channel limit
+    // if (chan->isLimitSet()) {
+    //     info << ":jarvis_server :User limit: " << chan->getChannelMaxUsers() << "\r\n";
+    // } else {
+    //     info << ":jarvis_server :User limit: none\r\n";
+    // }
 
-	// is channelfull
-    info << ":jarvis_server :IS FULL : " << (chan->isfull() ? "yes" : "no") << "\r\n";
+    // // Invite-only status
+    // info << ":jarvis_server :Invite-only: " << (chan->isInviteOnly() ? "yes" : "no") << "\r\n";
 
-	// invited users
-	info << ":invited users:" <<  chan->WhoIsInvite() << "\r\n";
+    // // Topic protection
+    // info << ":jarvis_server :Topic protection: " << (chan->isTopicOps() ? "operators only" : "anyone") << "\r\n";
 
-	return info.str();
+	// // is channelfull
+    // info << ":jarvis_server :IS FULL : " << (chan->isfull() ? "yes" : "no") << "\r\n";
+
+	// // invited users
+	// info << ":invited users:" <<  chan->WhoIsInvite() << "\r\n";
+
+	return r;
 }
 
 
@@ -44,7 +55,7 @@ std::string modess( Channel *chan ){
 void IrcServer::modeCmd( User &user, Irc_message &ircMessage ){
 
 
-	if (ircMessage.getParams().size() > 1){
+	if (ircMessage.getParams().size() >= 1){
 			//check channel is exicst
 			std::string channelname = ircMessage.getParams()[0];
 			std::string cleanChannelName = channelname.substr(1);
@@ -62,6 +73,13 @@ void IrcServer::modeCmd( User &user, Irc_message &ircMessage ){
 				std::string reply = ":jarvis_server 442 " + user.getNickname() + " #" + cleanChannelName + " :You're not on that channel" + "\r\n";
 				user.sendMessage( reply );
 				return;
+			}
+			if (ircMessage.getParams().size() == 1){
+				
+				std::cout << "[[[[[[[[   SERVER   ]]]]]]]]" << std::endl;
+				user.sendMessage(modess( this->findChannelObj(cleanChannelName) , user));
+				return ;
+
 			}
 			//check if the flages are only the allowd alphabitic ilkot   - +locgic start @params[1]
 			std::string modeType = ircMessage.getParams()[1];
@@ -138,12 +156,7 @@ void IrcServer::modeCmd( User &user, Irc_message &ircMessage ){
 
 				}
 			}
-			else {
-				
-				std::cout << "[SERVER]" << std::endl;
-				user.sendMessage(modess( this->findChannelObj(cleanChannelName) ));
-
-			}
+			
 		}
 
 }

@@ -563,3 +563,21 @@ void	IrcServer::signalHandler( int signal ) {
 	(void)signal;
 	_running = false;
 }
+
+
+
+
+/*
+
+
+17:01 -!- :Modes: none
+17:01 -!- INFO :Password: none
+17:01 -!- :User limit: none
+17:01 -!- :Invite-only: no
+17:01 -!- :Topic protection: anyone
+17:01 -!- :IS FULL : no
+17:01 -!- users:
+
+
+
+*/
