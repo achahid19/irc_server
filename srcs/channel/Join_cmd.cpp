@@ -42,7 +42,7 @@ void IrcServer::joinCommand(User &user, Irc_message &ircMessage){
 		// if channel is sitted on inivete mode and the user nick name is on the invited list
 		// chane is inviet channel and the usern not invited
 		if (_channels[cleanChannelName]->isInviteOnly() && !_channels[cleanChannelName]->isInList(user.getNickname())){
-			std::cout << " !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1 " << std::endl;
+			// std::cout << " !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1 " << std::endl;
 			user.sendMessage(":jarvis_server 473 " + user.getNickname() + " " + channelName + " :Cannot join channel (+i)\r\n");
 			return ;
 		}

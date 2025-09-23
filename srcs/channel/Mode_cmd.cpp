@@ -52,7 +52,7 @@ void IrcServer::modeCmd( User &user, Irc_message &ircMessage ){
 			}
 			if (ircMessage.getParams().size() == 1){
 				
-				std::cout << "[[[[[[[[   SERVER   ]]]]]]]]" << std::endl;
+				// std::cout << "[[[[[[[[   SERVER   ]]]]]]]]" << std::endl;
 				user.sendMessage(modess( this->findChannelObj(cleanChannelName) , user));
 				return ;
 

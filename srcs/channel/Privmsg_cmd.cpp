@@ -7,14 +7,14 @@ void	IrcServer::privmsgCmd( User &user, Irc_message &ircMessage ){
 
 
 		// DEBUG: Add these lines
-	std::cout << "[DEBUG] PRIVMSG target: '" << target << "'" << std::endl;
-	std::cout << "[DEBUG] PRIVMSG message: '" << msg << "'" << std::endl;
-	std::cout << "[DEBUG] Params size: " << ircMessage.getParams().size() << std::endl;
+	// std::cout << "[DEBUG] PRIVMSG target: '" << target << "'" << std::endl;
+	// std::cout << "[DEBUG] PRIVMSG message: '" << msg << "'" << std::endl;
+	// std::cout << "[DEBUG] Params size: " << ircMessage.getParams().size() << std::endl;
 
 	// If no trailing, try to get from params
 	if (msg.empty() && ircMessage.getParams().size() > 1) {
 		msg = ircMessage.getParams()[1];
-		std::cout << "[DEBUG] Using param[1]: '" << msg << "'" << std::endl;
+		// std::cout << "[DEBUG] Using param[1]: '" << msg << "'" << std::endl;
 	}
 
 		// If no trailing, try to get from params (fallback for simple messages)

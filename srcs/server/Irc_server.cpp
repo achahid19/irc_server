@@ -584,7 +584,7 @@ void	IrcServer::joinCmd( User &user, std::string channelName, std::string key ){
 		// if channel is sitted on inivete mode and the user nick name is on the invited list
 		// chane is inviet channel and the usern not invited
 		if (_channels[cleanChannelName]->isInviteOnly() && !_channels[cleanChannelName]->isInList(user.getNickname())){
-			std::cout << " !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1 " << std::endl;
+			// std::cout << " !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1 " << std::endl;
 			user.sendMessage(":jarvis_server 473 " + user.getNickname() + " " + channelName + " :Cannot join channel (+i)\r\n");
 			return ;
 		}
@@ -741,13 +741,13 @@ bool	IrcServer::isChannelExist( std::string channelName ){
 	bool result = _channels.find(channelName) != _channels.end();
 
 	// Debug output
-	std::cout << "[DEBUG] isChannelExist(" << channelName << ") called" << std::endl;
-	std::cout << "[DEBUG] Result: " << (result ? "true" : "false") << std::endl;
-	std::cout << "[DEBUG] Available channels: ";
-	for (std::map<std::string, Channel*>::iterator it = _channels.begin(); it != _channels.end(); ++it) {
-		std::cout << it->first << " ";
-	}
-	std::cout << std::endl;
+	// std::cout << "[DEBUG] isChannelExist(" << channelName << ") called" << std::endl;
+	// std::cout << "[DEBUG] Result: " << (result ? "true" : "false") << std::endl;
+	// std::cout << "[DEBUG] Available channels: ";
+	// for (std::map<std::string, Channel*>::iterator it = _channels.begin(); it != _channels.end(); ++it) {
+	// 	std::cout << it->first << " ";
+	// }
+	// std::cout << std::endl;
 
 	return result;
 }
