@@ -19,10 +19,10 @@
 
 
 enum logLevels {
-	INFO_LOGS = true,
-	ERROR_LOGS = true,
-	DEBUG_LOGS = true,
-	WARNING_LOGS = true,
+	INFO_LOGS = false,
+	ERROR_LOGS = false,
+	DEBUG_LOGS = false,
+	WARNING_LOGS = false,
 };
 
 std::string to_string( int value );

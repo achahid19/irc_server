@@ -394,6 +394,7 @@ void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
 
 			std::string response = ":" + oldNick + "!~jarvis@jarvis_server NICK :" + newNick + "\r\n";
 
+			// update user data.
 			user->removeNickname(oldNick);
 			user->addUsername(newNick);
 
@@ -403,9 +404,7 @@ void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
 				_channels[it->first]->nickInviteList(newNick, oldNick);
 				_channels[it->first]->nickOpList(newNick, oldNick);
 			}
-
 			user->sendMessage(response);
-
 		}
 		
 		else if (command == "QUIT") {
@@ -425,31 +424,18 @@ void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
 		}
 		else if (command == "INFO") {
 			if (ircMessage.getParams().size() == 0) {
-				infoCmd(*user);
+				infoCmd(*user, "");
 			} else {
 				infoCmd(*user, ircMessage.getParams()[0]);
 			}
-}
+		}
 		else if (command == "USERS") {
     		listUsersCmd(*user);
-}
-		else if (command == "POPO"){
-			user->sendMessage("popopopop\r\n");
-				// std::string key = (ircMessage.getParams().size() > 1) ? ircMessage.getParams()[1] : "";
-
 		}
 		else if (command == "PRIVMSG") {
 			privmsgCmd( *user, ircMessage );
 
-}
-		// else if (command == "msg"){
-		// 	if (ircMessage.getParams().size() > 0){
-		// 		std::string recieverNick = ircMessage.getParams()[1];
-		// 		//remove
-		// 		std::cout << ircMessage.getParams()[0] << std::endl;
-		// 		std::cout << ircMessage.getParams()[1] << std::endl;
-		// 	}
-		// }
+		}
 		else if (command == "TOPIC"){
 			topicCmd( *user, ircMessage );
 		}
@@ -481,7 +467,6 @@ void	IrcServer::_handleRequest( int eventIndex, int *bytes_read ) {
 		}
 	}
 }
-
 
 
 // exception server errors handling classes.
@@ -564,20 +549,213 @@ void	IrcServer::signalHandler( int signal ) {
 	_running = false;
 }
 
+// other methodes
+void	IrcServer::joinCmd( User &user, std::string channelName, std::string key ){
+		// Check if channel name is valid
+		if (channelName.empty() || channelName[0] != '#') {
+			user.sendMessage(":jarvis_server 403 " + user.getNickname() + " " + channelName + " :Invalid channel name\r\n");
+			return;
+		}
+
+		// Remove # from channel name for internal storage
+		std::string cleanChannelName = channelName.substr(1);
+
+		// Create new channel if it doesn't exist
+		if (!isChannelExist(cleanChannelName)) {
+			_channels[cleanChannelName] = new Channel(cleanChannelName, user, key);
+
+			// Send JOIN message to user
+			user.sendMessage(user.getPrefix() + " JOIN " + channelName + "\r\n");
+
+			// Send topic information
+			if (_channels[cleanChannelName]->ifTopic()) {
+				user.sendMessage(":jarvis_server 332 " + user.getNickname() + " " + channelName + " :" + _channels[cleanChannelName]->getChannelTopic() + "\r\n");
+			} else {
+				user.sendMessage(":jarvis_server 331 " + user.getNickname() + " " + channelName + " :No topic is set\r\n");
+			}
+
+			// Send names list
+			user.sendMessage(":jarvis_server 353 " + user.getNickname() + " = " + channelName + " :" + _channels[cleanChannelName]->usersNames() + "\r\n");
+			user.sendMessage(":jarvis_server 366 " + user.getNickname() + " " + channelName + " :End of /NAMES list\r\n");
+
+			return;
+		}
+
+		// if channel is sitted on inivete mode and the user nick name is on the invited list
+		// chane is inviet channel and the usern not invited
+		if (_channels[cleanChannelName]->isInviteOnly() && !_channels[cleanChannelName]->isInList(user.getNickname())){
+			std::cout << " !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1 " << std::endl;
+			user.sendMessage(":jarvis_server 473 " + user.getNickname() + " " + channelName + " :Cannot join channel (+i)\r\n");
+			return ;
+		}
+
+
+		// Try to add user to existing channel
+		int errCode = _channels[cleanChannelName]->addUser(user, key);
+
+		// Handle different error codes
+		if (errCode == 473) {
+			user.sendMessage(":jarvis_server 473 " + user.getNickname() + " " + channelName + " :Cannot join channel (+i)\r\n");
+			return;
+		}
+		else if (errCode == 474) {
+			user.sendMessage(":jarvis_server 474 " + user.getNickname() + " " + channelName + " :Cannot join channel (banned)\r\n");
+			return;
+		}
+		else if (errCode == 475) {
+			user.sendMessage(":jarvis_server 475 " + user.getNickname() + " " + channelName + " :Cannot join channel (+k)\r\n");
+			return;
+		}
+		else if (errCode == 471) {
+			user.sendMessage(":jarvis_server 471 " + user.getNickname() + " " + channelName + " :Cannot join channel (+l)\r\n");
+			return;
+		}
+		else if (errCode != 0) {
+			user.sendMessage(":jarvis_server 403 " + user.getNickname() + " " + channelName + " :Cannot join channel\r\n");
+			return;
+		}
+
+		// Successfully joined - send JOIN message to user
+		user.sendMessage(user.getPrefix() + " JOIN " + channelName + "\r\n");
+
+		// Broadcast JOIN message to channel
+		std::string joinMsg = user.getPrefix() + " JOIN " + channelName + "\r\n";
+		_channels[cleanChannelName]->broadcastMsg(user, joinMsg);
+
+		// Send topic information
+		if (_channels[cleanChannelName]->ifTopic()) {
+			user.sendMessage(":jarvis_server 332 " + user.getNickname() + " " + channelName + " :" + _channels[cleanChannelName]->getChannelTopic() + "\r\n");
+		} else {
+			user.sendMessage(":jarvis_server 331 " + user.getNickname() + " " + channelName + " :No topic is set\r\n");
+		}
+
+		// Send names list
+		user.sendMessage(":jarvis_server 353 " + user.getNickname() + " = " + channelName + " :" + _channels[cleanChannelName]->usersNames() + "\r\n");
+		user.sendMessage(":jarvis_server 366 " + user.getNickname() + " " + channelName + " :End of /NAMES list\r\n");
+}
+
+void IrcServer::infoCmd(User &user, const std::string &channelName) {
+    // List all channels if no channelName is provided
+    if (channelName.empty()) {
+        std::ostringstream oss;
+        oss << ":jarvis_server INFO :There are " << _channels.size() << " channel(s): ";
+        std::map<std::string, Channel*>::iterator it;
+        for (it = _channels.begin(); it != _channels.end(); ++it) {
+            oss << "#" << it->first << " ";
+        }
+        oss << "\r\n";
+        user.sendMessage(oss.str());
+        user.sendMessage(":jarvis_server INFO :To get info about a channel, type: /INFO #channelname\r\n");
+        return;
+    }
+
+    // Remove # if present
+    std::string cleanChannelName = channelName;
+    if (channelName[0] == '#')
+        cleanChannelName = channelName.substr(1);
+
+    if (!isChannelExist(cleanChannelName)) {
+        user.sendMessage(":jarvis_server 403 " + user.getNickname() + " " + channelName + " :No such channel\r\n");
+        return;
+    }
+
+    Channel *chan = _channels[cleanChannelName];
+    std::ostringstream info;
+    info << ":jarvis_server INFO :Channel #" << cleanChannelName << "\r\n";
+    info << ":jarvis_server INFO :Topic: " << (chan->ifTopic() ? chan->getChannelTopic() : "No topic set") << "\r\n";
+    info << ":jarvis_server INFO :User count: " << chan->getChannelCounter() << "\r\n";
+    info << ":jarvis_server INFO :Users: " << chan->usersNames() << "\r\n";
+
+    // Channel modes and properties
+    std::string modes = "";
+    if (chan->isInviteOnly()) modes += "i";
+    if (chan->isTopicOps()) modes += "t";
+    if (chan->isKeyRequired()) modes += "k";
+    if (chan->isLimitSet()) modes += "l";
+
+    info << ":jarvis_server INFO :Modes: " << (modes.empty() ? "none" : "+" + modes) << "\r\n";
+
+    // Channel key/password
+    if (chan->isKeyRequired()) {
+        info << ":jarvis_server INFO :Password: " << chan->getChannelKey() << "\r\n";
+    } else {
+        info << ":jarvis_server INFO :Password: none\r\n";
+    }
+
+    // Channel limit
+    if (chan->isLimitSet()) {
+        info << ":jarvis_server INFO :User limit: " << chan->getChannelMaxUsers() << "\r\n";
+    } else {
+        info << ":jarvis_server INFO :User limit: none\r\n";
+    }
+
+    // Invite-only status
+    info << ":jarvis_server INFO :Invite-only: " << (chan->isInviteOnly() ? "yes" : "no") << "\r\n";
+
+    // Topic protection
+    info << ":jarvis_server INFO :Topic protection: " << (chan->isTopicOps() ? "operators only" : "anyone") << "\r\n";
+
+	// is channelfull
+    info << ":jarvis_server INFO :IS FULL : " << (chan->isfull() ? "yes" : "no") << "\r\n";
+
+	// invited users
+
+	info << ":invited users:" <<  chan->WhoIsInvite() << "\r\n";
 
 
 
-/*
+    user.sendMessage(info.str());
+}
 
+void IrcServer::listUsersCmd(User &requestingUser) {
+    // Check if there are any connected users
+    if (_connections.empty()) {
+        requestingUser.sendMessage(":jarvis_server 401 " + requestingUser.getNickname() + " :No users are currently connected\r\n");
+        return;
+    }
 
-17:01 -!- :Modes: none
-17:01 -!- INFO :Password: none
-17:01 -!- :User limit: none
-17:01 -!- :Invite-only: no
-17:01 -!- :Topic protection: anyone
-17:01 -!- :IS FULL : no
-17:01 -!- users:
+    // Build the list of users
+    std::ostringstream oss;
+    oss << ":jarvis_server USERS :There are " << _connections.size() << " user(s) connected:\r\n";
 
+    for (std::map<int, User*>::iterator it = _connections.begin(); it != _connections.end(); ++it) {
+        User *user = it->second;
+        oss << ":jarvis_server USERS :Nickname: " << user->getNickname()
+            << ", Username: " << user->getUsername() << "\r\n";
+    }
 
+    // Send the list to the requesting user
+    requestingUser.sendMessage(oss.str());
+}
 
-*/
+User	*IrcServer::findUser( std::string nick ){
+	for (std::map<int, User*>::iterator it = _connections.begin(); it != _connections.end(); it++){
+		if (it->second->getNickname() == nick){
+			return it->second;
+		}
+	}
+	return 0;
+}
+
+bool	IrcServer::isChannelExist( std::string channelName ){
+	bool result = _channels.find(channelName) != _channels.end();
+
+	// Debug output
+	std::cout << "[DEBUG] isChannelExist(" << channelName << ") called" << std::endl;
+	std::cout << "[DEBUG] Result: " << (result ? "true" : "false") << std::endl;
+	std::cout << "[DEBUG] Available channels: ";
+	for (std::map<std::string, Channel*>::iterator it = _channels.begin(); it != _channels.end(); ++it) {
+		std::cout << it->first << " ";
+	}
+	std::cout << std::endl;
+
+	return result;
+}
+
+Channel	*IrcServer::findChannelObj( std::string channelName){
+	for (std::map<std::string, Channel*>::iterator it = _channels.begin(); it != _channels.end(); ++it) {
+		if (it->first == channelName)
+			return it->second;
+	}
+	return 0;
+}
