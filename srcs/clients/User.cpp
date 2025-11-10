@@ -140,16 +140,7 @@ void	User::registerUser( void ) {
 				send(this->_sock, response.c_str(), response.size(), 0);
 				this->_state = DISCONNECT;
 			}
-		}
-	};
-	if (this->_regitrationStep == 3) {
-		printMsg("User " + this->getNickname() + " registered successfully.", DEBUG_LOGS, COLOR_CYAN);
-		this->_state = REGISTRED;
-		std::string response(
-			":jarvis_server 001 " + this->getNickname() + " :Welcome to IRC Jarvis Server 🤖\r\n"
-		);
-		send(this->_sock, response.c_str(), response.size(), 0);
-		if (command == "CAP") {
+			else if (command == "CAP") {
 			if (ircMessage.getParams().size() > 0) {
 				std::string subcommand = ircMessage.getParams()[0];
 				if (subcommand == "LS") {
@@ -162,6 +153,15 @@ void	User::registerUser( void ) {
 				}
 			}
 		}
+		}
+	};
+	if (this->_regitrationStep == 3) {
+		printMsg("User " + this->getNickname() + " registered successfully.", DEBUG_LOGS, COLOR_CYAN);
+		this->_state = REGISTRED;
+		std::string response(
+			":jarvis_server 001 " + this->getNickname() + " :Welcome to IRC Jarvis Server 🤖\r\n"
+		);
+		send(this->_sock, response.c_str(), response.size(), 0);
 	}
 	
 }
