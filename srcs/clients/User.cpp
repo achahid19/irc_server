@@ -141,19 +141,19 @@ void	User::registerUser( void ) {
 				this->_state = DISCONNECT;
 			}
 		}
-		if (command == "CAP") {
-			if (ircMessage.getParams().size() > 0) {
-				std::string subcommand = ircMessage.getParams()[0];
-				if (subcommand == "LS") {
-					std::string response(":jarvis_server CAP * LS :\r\n");
-					send(this->_sock, response.c_str(), response.size(), 0);
-				}
-				else if (subcommand == "END") {
-					std::string response(":jarvis_server CAP * END\r\n");
-					send(this->_sock, response.c_str(), response.size(), 0);
-				}
-			}
-		}
+		// if (command == "CAP") {
+		// 	if (ircMessage.getParams().size() > 0) {
+		// 		std::string subcommand = ircMessage.getParams()[0];
+		// 		if (subcommand == "LS") {
+		// 			std::string response(":jarvis_server CAP * LS :\r\n");
+		// 			send(this->_sock, response.c_str(), response.size(), 0);
+		// 		}
+		// 		else if (subcommand == "END") {
+		// 			std::string response(":jarvis_server CAP * END\r\n");
+		// 			send(this->_sock, response.c_str(), response.size(), 0);
+		// 		}
+		// 	}
+		// }
 	};
 	if (this->_regitrationStep == 3) {
 		printMsg("User " + this->getNickname() + " registered successfully.", DEBUG_LOGS, COLOR_CYAN);
