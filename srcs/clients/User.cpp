@@ -95,7 +95,20 @@ void	User::registerUser( void ) {
 			send(this->_sock, response.c_str(), response.size(), 0);
 			continue; // skip unsupported commands
 		}
-		if (command == "NICK" && this->getNickname().empty()) {
+		if (command == "CAP") {
+			if (ircMessage.getParams().size() > 0) {
+				std::string subcommand = ircMessage.getParams()[0];
+				if (subcommand == "LS") {
+					std::string response(":jarvis_server CAP * LS :\r\n");
+					send(this->_sock, response.c_str(), response.size(), 0);
+				}
+				else if (subcommand == "END") {
+					std::string response(":jarvis_server CAP * END\r\n");
+					send(this->_sock, response.c_str(), response.size(), 0);
+				}
+			}
+		}
+		else if (command == "NICK" && this->getNickname().empty()) {
 			if (ircMessage.parseNickCommand() == false) {
 				std::string response(
 					":jarvis_server 432 " + this->getNickname() + " " + ircMessage.getParams()[0] + " NICK :parameters error\r\n"
@@ -141,19 +154,6 @@ void	User::registerUser( void ) {
 				this->_state = DISCONNECT;
 			}
 		}
-		// if (command == "CAP") {
-		// 	if (ircMessage.getParams().size() > 0) {
-		// 		std::string subcommand = ircMessage.getParams()[0];
-		// 		if (subcommand == "LS") {
-		// 			std::string response(":jarvis_server CAP * LS :\r\n");
-		// 			send(this->_sock, response.c_str(), response.size(), 0);
-		// 		}
-		// 		else if (subcommand == "END") {
-		// 			std::string response(":jarvis_server CAP * END\r\n");
-		// 			send(this->_sock, response.c_str(), response.size(), 0);
-		// 		}
-		// 	}
-		// }
 	};
 	if (this->_regitrationStep == 3) {
 		printMsg("User " + this->getNickname() + " registered successfully.", DEBUG_LOGS, COLOR_CYAN);
