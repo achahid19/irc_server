@@ -140,7 +140,8 @@ void	User::registerUser( void ) {
 				send(this->_sock, response.c_str(), response.size(), 0);
 				this->_state = DISCONNECT;
 			}
-			if (command == "CAP") {
+		}
+		if (command == "CAP") {
 			if (ircMessage.getParams().size() > 0) {
 				std::string subcommand = ircMessage.getParams()[0];
 				if (subcommand == "LS") {
@@ -152,7 +153,6 @@ void	User::registerUser( void ) {
 					send(this->_sock, response.c_str(), response.size(), 0);
 				}
 			}
-		}
 		}
 	};
 	if (this->_regitrationStep == 3) {
