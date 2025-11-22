@@ -122,6 +122,9 @@ void	User::registerUser( void ) {
 				continue;
 			}
 			this->_regitrationStep++;
+			if (this->_completeRegistration()) {
+				return; // Stop processing further commands - they'll be handled as registered user commands
+			}
 		}
 		else if (command == "USER" && this->getUsername().empty()) {
 			if (ircMessage.parseUserCommand() == false) {
@@ -134,6 +137,9 @@ void	User::registerUser( void ) {
 			std::string userName = ircMessage.getParams()[0];
 			if (!this->_setUsername(userName)) continue;
 			this->_regitrationStep++;
+			if (this->_completeRegistration()) {
+				return; // Stop processing further commands - they'll be handled as registered user commands
+			}
 		}
 		else if (command == "PASS") {
 			if (ircMessage.parsePassCommand() == false) {
@@ -146,6 +152,9 @@ void	User::registerUser( void ) {
 			std::string password = ircMessage.getParams()[0];
 			if (this->_checkPassword(password)) {
 				this->_regitrationStep++;
+				if (this->_completeRegistration()) {
+					return; // Stop processing further commands - they'll be handled as registered user commands
+				}
 			} else {
 				std::string response(
 					":jarvis_server 464 " + this->getNickname() + " :Password incorrect\r\n"
@@ -155,14 +164,6 @@ void	User::registerUser( void ) {
 			}
 		}
 	};
-	if (this->_regitrationStep == 3) {
-		printMsg("User " + this->getNickname() + " registered successfully.", DEBUG_LOGS, COLOR_CYAN);
-		this->_state = REGISTRED;
-		std::string response(
-			":jarvis_server 001 " + this->getNickname() + " :Welcome to IRC Jarvis Server 🤖\r\n"
-		);
-		send(this->_sock, response.c_str(), response.size(), 0);
-	}
 	
 }
 
@@ -336,4 +337,26 @@ bool	User::_setUsername( std::string const& userName ) {
  */
 bool	User::_checkPassword( std::string const& password ) {
 	return password == this->_serverPassword;
+};
+
+/**
+ * _completeRegistration - User _completeRegistration helper method
+ *
+ * This method checks if registration is complete (all 3 steps: PASS, NICK, USER).
+ * If complete, it sends the welcome message, sets the state to REGISTRED, and returns true.
+ * Otherwise, it returns false.
+ *
+ * Return: true if registration is complete, false otherwise.
+ */
+bool	User::_completeRegistration( void ) {
+	if (this->_regitrationStep == 3) {
+		printMsg("User " + this->getNickname() + " registered successfully.", DEBUG_LOGS, COLOR_CYAN);
+		this->_state = REGISTRED;
+		std::string response(
+			":jarvis_server 001 " + this->getNickname() + " :Welcome to IRC Jarvis Server 🤖\r\n"
+		);
+		send(this->_sock, response.c_str(), response.size(), 0);
+		return true;
+	}
+	return false;
 };

@@ -35,6 +35,9 @@ private:
 	// private setters
 	bool	_setUsername( std::string const& userName );
 	bool	_checkPassword( std::string const& password );
+	
+	// private helper methods
+	bool	_completeRegistration( void );
 
 	// no copy or instantiation without params
 	User( User const &other );
