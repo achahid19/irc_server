@@ -99,10 +99,48 @@ void	User::registerUser( void ) {
 			if (ircMessage.getParams().size() > 0) {
 				std::string subcommand = ircMessage.getParams()[0];
 				if (subcommand == "LS") {
-					std::string response(":jarvis_server CAP * LS :\r\n");
+					// List server capabilities based on actual server features
+					// Server supports: INVITE notifications, standard IRC commands, channel modes
+					std::string capabilities = "invite-notify";
+					std::string response(":jarvis_server CAP * LS :" + capabilities + "\r\n");
 					send(this->_sock, response.c_str(), response.size(), 0);
 				}
+				else if (subcommand == "REQ") {
+					// Handle capability requests - only acknowledge supported capabilities
+					if (ircMessage.getParams().size() > 1) {
+						std::string requestedCaps = ircMessage.getParams()[1];
+						std::string supportedCaps = "";
+						std::string unsupportedCaps = "";
+						
+						// Parse requested capabilities (space-separated)
+						std::istringstream iss(requestedCaps);
+						std::string cap;
+						std::set<std::string> supported = {"invite-notify"};
+						
+						while (iss >> cap) {
+							if (supported.find(cap) != supported.end()) {
+								if (!supportedCaps.empty()) supportedCaps += " ";
+								supportedCaps += cap;
+							} else {
+								if (!unsupportedCaps.empty()) unsupportedCaps += " ";
+								unsupportedCaps += cap;
+							}
+						}
+						
+						// Send ACK for supported capabilities
+						if (!supportedCaps.empty()) {
+							std::string response(":jarvis_server CAP * ACK :" + supportedCaps + "\r\n");
+							send(this->_sock, response.c_str(), response.size(), 0);
+						}
+						// Send NAK for unsupported capabilities
+						if (!unsupportedCaps.empty()) {
+							std::string response(":jarvis_server CAP * NAK :" + unsupportedCaps + "\r\n");
+							send(this->_sock, response.c_str(), response.size(), 0);
+						}
+					}
+				}
 				else if (subcommand == "END") {
+					// End capability negotiation
 					std::string response(":jarvis_server CAP * END\r\n");
 					send(this->_sock, response.c_str(), response.size(), 0);
 				}
